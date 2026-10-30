@@ -1,31 +1,34 @@
 # Contains the talos machine configuration overrides specific for each node
+{% set talos_proxmox_modern_config = talos_proxmox_talos_version is version('v1.14.0', '>=') %}
 version: v1alpha1
 machine:
   network:
-    hostname: {{ node.name }}
+{% if not talos_proxmox_modern_config %}
+    hostname: {{ talos_proxmox_node.name }}
+{% endif %}
     interfaces:
       - deviceSelector:
           physical: true
         dhcp: false
-{% if enable_vlans %}
+{% if talos_proxmox_enable_vlans %}
         vlans:
-          - vlanId: {{ mgmt_vlan_id }}
+          - vlanId: {{ talos_proxmox_mgmt_vlan_id }}
             addresses:
-              - {{ node.ip }}/24
-{% if node in masters %}
+              - {{ talos_proxmox_node.ip }}/24
+{% if talos_proxmox_node in talos_proxmox_masters %}
             vip:
-              ip: {{ cluster_shared_ip }}
+              ip: {{ talos_proxmox_cluster_shared_ip }}
 {% endif %}
 {% else %}
         addresses:
-          - {{ node.ip }}/24
-        {% if node is in masters -%}
+          - {{ talos_proxmox_node.ip }}/24
+        {% if talos_proxmox_node is in talos_proxmox_masters -%}
         vip:
-          ip: {{ cluster_shared_ip }}
+          ip: {{ talos_proxmox_cluster_shared_ip }}
 {% endif %}
 {% endif %}
 
-  {% if enable_longhorn_support and (node.storage_disk | default(0, true) | int) > 0 -%}
+{% if not talos_proxmox_modern_config and talos_proxmox_enable_longhorn_support and (talos_proxmox_node.storage_disk | default(0, true) | int) > 0 %}
   kubelet:
     extraMounts:
       - destination: /var/mnt/storage-data
@@ -35,9 +38,41 @@ machine:
           - bind
           - rshared
           - rw
-  {% endif %}
+{% endif %}
 
-{% if (node.storage_disk | default(0, true) | int) > 0 %}
+{% if talos_proxmox_modern_config %}
+---
+apiVersion: v1alpha1
+kind: HostnameConfig
+auto: "off"
+hostname: {{ talos_proxmox_node.name }}
+{% if talos_proxmox_node in talos_proxmox_masters %}
+{% if talos_proxmox_schedule_on_masters | bool %}
+---
+apiVersion: v1alpha1
+kind: KubeNodeConfig
+taints:
+  node-role.kubernetes.io/control-plane:
+    $patch: delete
+labels:
+  node.kubernetes.io/exclude-from-external-load-balancers:
+    $patch: delete
+{% endif %}
+---
+apiVersion: v1alpha1
+kind: KubeAPIServerConfig
+certExtraSANs:
+  - {{ talos_proxmox_cluster_name | split('.') | first }}
+  - {{ talos_proxmox_cluster_shared_ip }}
+{% if talos_proxmox_install_cilium %}
+---
+apiVersion: v1alpha1
+kind: KubeProxyConfig
+enabled: false
+{% endif %}
+{% endif %}
+{% endif %}
+{% if (talos_proxmox_node.storage_disk | default(0, true) | int) > 0 %}
 ---
 apiVersion: v1alpha1
 kind: UserVolumeConfig
@@ -49,16 +84,16 @@ provisioning:
     match: disk.transport == "virtio" && !system_disk
 
   # The minimum size of the volume. Set it to halve of the configured size
-  minSize: {{ (node.storage_disk | int // 2) }}GiB
+  minSize: {{ (talos_proxmox_node.storage_disk | int // 2) }}GiB
 # The filesystem describes how the volume is formatted.
 filesystem:
     type: xfs # Filesystem type. Default is `xfs`.
-{% if (node.storage_disk_encryption_key | default("", true) | length) > 0 %}
+{% if (talos_proxmox_node.storage_disk_encryption_key | default("", true) | length) > 0 %}
 encryption:
     provider: luks2
     keys:
         - slot: 0
           static:
-            passphrase: {{ node.storage_disk_encryption_key }}
+            passphrase: {{ talos_proxmox_node.storage_disk_encryption_key }}
 {% endif -%}
 {% endif -%}

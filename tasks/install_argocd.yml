@@ -8,21 +8,21 @@
       apiVersion: v1
       kind: Namespace
       metadata:
-        name: "{{ argocd_app_namespace }}"
+        name: "{{ talos_proxmox_argocd_app_namespace }}"
 
 - name: Install ArgoCD using official manifests
   kubernetes.core.k8s:
     state: present
-    src: https://raw.githubusercontent.com/argoproj/argo-cd/refs/tags/{{ argocd_version }}/manifests/install.yaml
-    namespace: "{{ argocd_app_namespace }}"
+    src: https://raw.githubusercontent.com/argoproj/argo-cd/refs/tags/{{ talos_proxmox_argocd_version }}/manifests/install.yaml
+    namespace: "{{ talos_proxmox_argocd_app_namespace }}"
 
 - name: Wait for ArgoCD server deployment to be ready
   kubernetes.core.k8s_info:
     kind: Deployment
-    namespace: "{{ argocd_app_namespace }}"
+    namespace: "{{ talos_proxmox_argocd_app_namespace }}"
     name: argocd-server
-  register: argocd_server
-  until: argocd_server.resources[0].status.readyReplicas | default(0) > 0
+  register: talos_proxmox_argocd_server
+  until: talos_proxmox_argocd_server.resources[0].status.readyReplicas | default(0) > 0
   retries: 30
   delay: 10
 
@@ -34,7 +34,7 @@
       kind: ConfigMap
       metadata:
         name: argocd-cm
-        namespace: "{{ argocd_app_namespace }}"
+        namespace: "{{ talos_proxmox_argocd_app_namespace }}"
       data:
         resource.customizations: |
           argoproj.io/Application:
@@ -60,13 +60,13 @@
       kind: Secret
       metadata:
         name: argocd-repo
-        namespace: "{{ argocd_app_namespace }}"
+        namespace: "{{ talos_proxmox_argocd_app_namespace }}"
         labels:
           argocd.argoproj.io/secret-type: repository
       stringData:
-        url: "{{ argocd_repo_url }}"
-        type: "{{ argocd_repo_type }}"
-        revision: "{{ argocd_repo_revision }}"
+        url: "{{ talos_proxmox_argocd_repo_url }}"
+        type: "{{ talos_proxmox_argocd_repo_type }}"
+        revision: "{{ talos_proxmox_argocd_repo_revision }}"
 
 - name: Create ArgoCD app-of-apps application
   kubernetes.core.k8s:
@@ -75,17 +75,17 @@
       apiVersion: argoproj.io/v1alpha1
       kind: Application
       metadata:
-        name: "{{ argocd_app_name }}"
-        namespace: "{{ argocd_app_namespace }}"
+        name: "{{ talos_proxmox_argocd_app_name }}"
+        namespace: "{{ talos_proxmox_argocd_app_namespace }}"
       spec:
         project: default
         source:
-          repoURL: "{{ argocd_repo_url }}"
-          targetRevision: "{{ argocd_repo_revision }}"
-          path: "{{ argocd_app_path }}"
+          repoURL: "{{ talos_proxmox_argocd_repo_url }}"
+          targetRevision: "{{ talos_proxmox_argocd_repo_revision }}"
+          path: "{{ talos_proxmox_argocd_app_path }}"
         destination:
-          server: "{{ argocd_app_dest_server }}"
-          namespace: "{{ argocd_app_dest_namespace }}"
+          server: "{{ talos_proxmox_argocd_app_dest_server }}"
+          namespace: "{{ talos_proxmox_argocd_app_dest_namespace }}"
         syncPolicy:
           automated:
             prune: true

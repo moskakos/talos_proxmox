@@ -8,21 +8,21 @@
       - apply-config
       - --insecure
       - --nodes
-      - "{{ talos_node_ips[item.name] }}"
+      - "{{ talos_proxmox_talos_node_ips[item.name] }}"
       - --file
-      - "/tmp/.talos/{{ current_node_type }}.yaml"
+      - "/tmp/.talos/{{ talos_proxmox_current_node_type }}.yaml"
       - --config-patch
       - "@/tmp/.talos/talos_node_patch_{{ item.name }}.yaml"
 
 - name: Switch {{ item.name }} to trunk port in proxmox
   community.proxmox.proxmox_nic:
-    api_user: "{{ proxmox_api_user }}"
-    api_host: "{{ proxmox_server }}"
-    api_port: "{{ proxmox_port }}"
-    api_token_id: "{{ proxmox_api_token_id }}"
-    api_token_secret: "{{ proxmox_api_token_secret }}"
+    api_user: "{{ talos_proxmox_proxmox_api_user }}"
+    api_host: "{{ talos_proxmox_proxmox_server }}"
+    api_port: "{{ talos_proxmox_proxmox_port }}"
+    api_token_id: "{{ talos_proxmox_proxmox_api_token_id }}"
+    api_token_secret: "{{ talos_proxmox_proxmox_api_token_secret }}"
     name: "{{ item.name }}"
     interface: net0
-    bridge: "{{ k8s_vmbr }}"
+    bridge: "{{ talos_proxmox_k8s_vmbr }}"
     tag: false
-  when: enable_vlans
+  when: talos_proxmox_enable_vlans
