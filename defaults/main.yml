@@ -124,6 +124,14 @@ talos_proxmox_nameservers:
   - 1.1.1.1
   - 8.8.8.8
 
+# Search domains appended to short hostnames (only used with Talos >= v1.14.0, ResolverConfig). Empty means not set.
+# Example: ["example.com"]
+talos_proxmox_search_domains: []
+
+# Optional host DNS settings (only used with Talos >= v1.14.0, ResolverConfig). Empty means not set.
+# Example: { enabled: true, forwardKubeDNSToHost: true, resolveMemberNames: true }
+talos_proxmox_host_dns: {}
+
 talos_proxmox_timeservers:
   - time.cloudflare.com
 

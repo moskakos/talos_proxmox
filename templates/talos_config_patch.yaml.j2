@@ -114,6 +114,17 @@ nameservers:
 {% for talos_proxmox_ns in talos_proxmox_nameservers %}
   - address: {{ talos_proxmox_ns }}
 {% endfor %}
+{% if talos_proxmox_search_domains | length > 0 %}
+searchDomains:
+  domains:
+{% for talos_proxmox_domain in talos_proxmox_search_domains %}
+    - {{ talos_proxmox_domain }}
+{% endfor %}
+{% endif %}
+{% if talos_proxmox_host_dns | length > 0 %}
+hostDNS:
+{{ talos_proxmox_host_dns | to_nice_yaml(indent=2) | trim | indent(2, true) }}
+{% endif %}
 {% if talos_proxmox_install_cilium %}
 ---
 apiVersion: v1alpha1
