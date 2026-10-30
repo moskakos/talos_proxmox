@@ -1,6 +1,14 @@
 ---
 # Main task file for talos_proxmox role
 
+- name: Validate minimum supported Talos version
+  ansible.builtin.assert:
+    that:
+      - talos_proxmox_talos_version is version('v1.14.0', '>=')
+    fail_msg: "Talos versions older than v1.14.0 are not supported. Set talos_proxmox_talos_version to v1.14.0 or later."
+    quiet: true
+  tags: [always]
+
 - name: Generate and distribute Talos configuration
   import_tasks: configure_talos.yml
   tags: [configure_talos]

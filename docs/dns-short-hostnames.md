@@ -40,8 +40,8 @@ hostDNS:
   resolveMemberNames: true
 ```
 
-The variables are only used for Talos `v1.14.0` and later. Older releases use
-the legacy `machine.network.nameservers` path, which only supports name servers.
+This role supports Talos `v1.14.0` and later, and always renders DNS settings
+through `ResolverConfig`.
 
 ## Using short node names with `talosctl`
 

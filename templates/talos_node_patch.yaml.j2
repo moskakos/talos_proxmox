@@ -1,11 +1,7 @@
 # Contains the talos machine configuration overrides specific for each node
-{% set talos_proxmox_modern_config = talos_proxmox_talos_version is version('v1.14.0', '>=') %}
 version: v1alpha1
 machine:
   network:
-{% if not talos_proxmox_modern_config %}
-    hostname: {{ talos_proxmox_node.name }}
-{% endif %}
     interfaces:
       - deviceSelector:
           physical: true
@@ -28,19 +24,6 @@ machine:
 {% endif %}
 {% endif %}
 
-{% if not talos_proxmox_modern_config and talos_proxmox_enable_longhorn_support and (talos_proxmox_node.storage_disk | default(0, true) | int) > 0 %}
-  kubelet:
-    extraMounts:
-      - destination: /var/mnt/storage-data
-        type: bind
-        source: /var/mnt/storage-data
-        options:
-          - bind
-          - rshared
-          - rw
-{% endif %}
-
-{% if talos_proxmox_modern_config %}
 ---
 apiVersion: v1alpha1
 kind: HostnameConfig
@@ -69,7 +52,6 @@ certExtraSANs:
 apiVersion: v1alpha1
 kind: KubeProxyConfig
 enabled: false
-{% endif %}
 {% endif %}
 {% endif %}
 {% if (talos_proxmox_node.storage_disk | default(0, true) | int) > 0 %}

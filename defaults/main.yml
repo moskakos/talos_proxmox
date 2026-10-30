@@ -15,7 +15,7 @@ talos_proxmox_proxmox_storage: "local"
 talos_proxmox_proxmox_vm_storage: "local-lvm"
 talos_proxmox_proxmox_storage_url: "{{ talos_proxmox_proxmox_api_url }}/nodes/{{ talos_proxmox_proxmox_node }}/storage/{{ talos_proxmox_proxmox_storage }}"
 
-talos_proxmox_talos_version: "v1.11.1"
+talos_proxmox_talos_version: "v1.14.5"
 # The talos image will always use the qemu-guest-agent extension
 # Below you can enable additional extensions if needed
 # Enables support for Longhorn in the Talos ISO (iscsi-tools and util-linux-tools)
@@ -112,10 +112,9 @@ talos_proxmox_workers:
 # Base interface for VLANs (e.g. eth0, ens18, ...)
 talos_proxmox_vlan_base_interface: "eth0"
 
-# Allow workloads on the master (control plane) nodes. When true, the control plane taint is removed
-# (allowSchedulingOnControlPlanes on Talos < v1.14.0, KubeNodeConfig on Talos >= v1.14.0) and, on Talos >= v1.14.0,
-# the node.kubernetes.io/exclude-from-external-load-balancers label is removed too, so load balancers such as
-# MetalLB (L2) can announce addresses from the masters. Defaults to true only when no workers are defined.
+# When true, the control-plane taint and the node.kubernetes.io/exclude-from-external-load-balancers label are
+# removed, so masters can run workloads and load balancers such as MetalLB (L2) can announce addresses from them.
+# Defaults to true only when no workers are defined.
 talos_proxmox_schedule_on_masters: "{{ (talos_proxmox_workers | length == 0) | bool }}"
 
 # VLANs for Cilium (for later service exposure)
@@ -130,11 +129,11 @@ talos_proxmox_nameservers:
   - 1.1.1.1
   - 8.8.8.8
 
-# Search domains appended to short hostnames (only used with Talos >= v1.14.0, ResolverConfig). Empty means not set.
+# Search domains appended to short hostnames through ResolverConfig. Empty means not set.
 # Example: ["example.com"]
 talos_proxmox_search_domains: []
 
-# Optional host DNS settings (only used with Talos >= v1.14.0, ResolverConfig). Empty means not set.
+# Optional host DNS settings in ResolverConfig. Empty means not set.
 # Example: { enabled: true, forwardKubeDNSToHost: true, resolveMemberNames: true }
 talos_proxmox_host_dns: {}
 
