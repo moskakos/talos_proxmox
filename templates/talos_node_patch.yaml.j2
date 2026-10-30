@@ -1,8 +1,11 @@
 # Contains the talos machine configuration overrides specific for each node
+{% set talos_proxmox_modern_config = talos_proxmox_talos_version is version('v1.14.0', '>=') %}
 version: v1alpha1
 machine:
   network:
+{% if not talos_proxmox_modern_config %}
     hostname: {{ talos_proxmox_node.name }}
+{% endif %}
     interfaces:
       - deviceSelector:
           physical: true
@@ -25,7 +28,7 @@ machine:
 {% endif %}
 {% endif %}
 
-  {% if talos_proxmox_enable_longhorn_support and (talos_proxmox_node.storage_disk | default(0, true) | int) > 0 -%}
+{% if not talos_proxmox_modern_config and talos_proxmox_enable_longhorn_support and (talos_proxmox_node.storage_disk | default(0, true) | int) > 0 %}
   kubelet:
     extraMounts:
       - destination: /var/mnt/storage-data
@@ -37,6 +40,33 @@ machine:
           - rw
 {% endif %}
 
+{% if talos_proxmox_modern_config %}
+---
+apiVersion: v1alpha1
+kind: HostnameConfig
+auto: "off"
+hostname: {{ talos_proxmox_node.name }}
+{% if talos_proxmox_node in talos_proxmox_masters %}
+---
+apiVersion: v1alpha1
+kind: KubeNodeConfig
+taints:
+  node-role.kubernetes.io/control-plane:
+    $patch: delete
+---
+apiVersion: v1alpha1
+kind: KubeAPIServerConfig
+certExtraSANs:
+  - {{ talos_proxmox_cluster_name | split('.') | first }}
+  - {{ talos_proxmox_cluster_shared_ip }}
+{% if talos_proxmox_install_cilium %}
+---
+apiVersion: v1alpha1
+kind: KubeProxyConfig
+enabled: false
+{% endif %}
+{% endif %}
+{% endif %}
 {% if (talos_proxmox_node.storage_disk | default(0, true) | int) > 0 %}
 ---
 apiVersion: v1alpha1

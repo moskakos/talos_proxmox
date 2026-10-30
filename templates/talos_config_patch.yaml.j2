@@ -1,4 +1,5 @@
 # Contains the talos machine configuration overrides for all nodes
+{% set talos_proxmox_modern_config = talos_proxmox_talos_version is version('v1.14.0', '>=') %}
 version: v1alpha1
 machine:
   network:
@@ -24,10 +25,12 @@ machine:
             gateway: {{ talos_proxmox_mgmt_gateway }}
         {% endif %}
 
+{% if not talos_proxmox_modern_config %}
     nameservers:
         {% for talos_proxmox_ns in talos_proxmox_nameservers -%}
         - {{ talos_proxmox_ns }}
         {% endfor %}
+{% endif %}
 
     extraHostEntries:
       - ip: {{ talos_proxmox_cluster_shared_ip }}
@@ -35,10 +38,12 @@ machine:
             - {{ talos_proxmox_cluster_name | split('.') | first }}
             - {{ talos_proxmox_cluster_name }}
 
+{% if not talos_proxmox_modern_config %}
   install:
     disk: {{ talos_proxmox_talos_installation_disk_path }}
     image: {{ talos_proxmox_talos_installer_image_url }}
     wipe: {{ talos_proxmox_talos_installation_disk_wipe | default(false, true) }}
+{% endif %}
 
   time:
     disabled: false
@@ -60,7 +65,10 @@ machine:
       - name: vfio_pci
   {% endif %}
 
+{% if not talos_proxmox_modern_config or talos_proxmox_install_cilium or talos_proxmox_enable_gateway_api %}
 cluster:
+{% if not talos_proxmox_modern_config %}
+  allowSchedulingOnControlPlanes: true
   apiServer:
     certSANs:
       - {{ talos_proxmox_cluster_name | split('.') | first }}
@@ -73,19 +81,43 @@ cluster:
   proxy:
     disabled: true
   {% endif %}
+{% endif %}
 
-  {% if talos_proxmox_install_cilium -%}
+{% if talos_proxmox_install_cilium %}
   inlineManifests:
     - name: cilium
       contents: |
-        {% for line in talos_proxmox_cilium_manifest.stdout_lines -%}
-        {{ line }}
-        {% endfor -%}
-  {% endif %}
+{{ talos_proxmox_cilium_manifest.stdout_lines | join('\n') | indent(8, true) }}
+{% endif %}
 
-  {% if talos_proxmox_enable_gateway_api -%}
+{% if talos_proxmox_enable_gateway_api %}
   extraManifests:
-    {% for talos_proxmox_gw_crd in talos_proxmox_gateway_api_crds %}
+{% for talos_proxmox_gw_crd in talos_proxmox_gateway_api_crds %}
     - "{{ talos_proxmox_gateway_api_crds_base_url }}/{{ talos_proxmox_gw_crd.type }}/gateway.networking.k8s.io_{{ talos_proxmox_gw_crd.name }}.yaml"
-    {% endfor %}
-  {%- endif -%}
+{% endfor %}
+{% endif %}
+{% endif %}
+{% if talos_proxmox_modern_config %}
+---
+apiVersion: v1alpha1
+kind: UnattendedInstallConfig
+installer:
+  image: {{ talos_proxmox_talos_installer_image_url }}
+provisioning:
+  diskSelector:
+    match: 'disk.dev_path == {{ talos_proxmox_talos_installation_disk_path | to_json }}'
+  wipe: {{ talos_proxmox_talos_installation_disk_wipe | default(false, true) | bool | lower }}
+---
+apiVersion: v1alpha1
+kind: ResolverConfig
+nameservers:
+{% for talos_proxmox_ns in talos_proxmox_nameservers %}
+  - address: {{ talos_proxmox_ns }}
+{% endfor %}
+{% if talos_proxmox_install_cilium %}
+---
+apiVersion: v1alpha1
+kind: KubeFlannelCNIConfig
+$patch: delete
+{% endif %}
+{% endif %}

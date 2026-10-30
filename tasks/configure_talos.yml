@@ -75,6 +75,7 @@
   ansible.builtin.command:
     cmd: >-
       talosctl gen config {{ talos_proxmox_cluster_name }} https://{{ talos_proxmox_cluster_name }}:6443
+      --talos-version {{ talos_proxmox_talos_version }}
       --with-secrets /tmp/.talos/talos_secrets.yaml
       --output /tmp/.talos
       --config-patch @/tmp/.talos/talos_config_patch.yaml
