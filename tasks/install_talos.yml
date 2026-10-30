@@ -11,6 +11,7 @@
     node: "{{ talos_proxmox_proxmox_node }}"
     name: "{{ item.name }}"
     type: qemu
+    config: current
     network: true
   register: talos_proxmox_vm_info
   loop: "{{ talos_proxmox_masters + talos_proxmox_workers }}"
@@ -28,6 +29,18 @@
   loop_control:
     loop_var: talos_proxmox_vm
     label: "{{ talos_proxmox_vm.item.name }}"
+
+- name: Validate discovered Talos node IPv4 addresses
+  ansible.builtin.assert:
+    that:
+      - talos_proxmox_talos_node_ips[item.name] is defined
+      - talos_proxmox_talos_node_ips[item.name] is not none
+      - talos_proxmox_talos_node_ips[item.name] | string | length > 0
+    fail_msg: "No IPv4 address was discovered for {{ item.name }}. Check the Proxmox guest agent and VM network before applying Talos configuration."
+    quiet: true
+  loop: "{{ talos_proxmox_masters + talos_proxmox_workers }}"
+  loop_control:
+    label: "{{ item.name }}"
 
 - name: Install Talos on master nodes
   include_tasks: install_talos_node.yml
