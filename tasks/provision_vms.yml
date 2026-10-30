@@ -62,11 +62,6 @@
   loop_control:
     label: "{{ item.name }}"
 
-- name: Wait for the VMs to be created
-  ansible.builtin.wait_for:
-    timeout: 20
-  delegate_to: localhost
-
 - name: Start talos VMs
   community.proxmox.proxmox_kvm:
     api_user: "{{ talos_proxmox_proxmox_api_user }}"
@@ -77,6 +72,10 @@
     node: "{{ talos_proxmox_proxmox_node }}"
     name: "{{ item.name }}"
     state: started
+  register: talos_proxmox_vm_start
+  until: talos_proxmox_vm_start is succeeded
+  retries: 10
+  delay: 3
   loop: "{{ talos_proxmox_masters + talos_proxmox_workers }}"
   loop_control:
     label: "{{ item.name }}"
