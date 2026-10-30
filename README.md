@@ -26,7 +26,7 @@ This Ansible role automates the provisioning and configuration of a Talos-based 
 
 Select the target release with `talos_proxmox_talos_version`, for example `v1.14.2`, and use a matching `talosctl` version on the control host. Configuration generation explicitly targets this release.
 
-For Talos 1.14, the role uses separate installation, DNS and hostname documents. Control-plane certificate settings, scheduling taints and Cilium's kube-proxy settings are patched only on master nodes. The `node.kubernetes.io/exclude-from-external-load-balancers` label is also removed from master nodes, because they run workloads and load balancers such as MetalLB (L2) would otherwise have no node to announce from. Additional storage still uses `UserVolumeConfig`, without the legacy kubelet `extraMounts` patch.
+For Talos 1.14, the role uses separate installation, DNS and hostname documents. Control-plane certificate settings and Cilium's kube-proxy settings are patched only on master nodes. When `talos_proxmox_schedule_on_masters` is true (the default when no workers are defined), the control plane taint and the `node.kubernetes.io/exclude-from-external-load-balancers` label are also removed from master nodes, so they can run workloads and load balancers such as MetalLB (L2) have nodes to announce from. Additional storage still uses `UserVolumeConfig`, without the legacy kubelet `extraMounts` patch.
 
 The legacy configuration path is retained for older releases. Offline configuration validation covers Talos 1.11.1 and 1.14.2 with master/worker, VLAN and Cilium variants; this does not replace a live cluster installation test.
 
@@ -228,6 +228,7 @@ The following table lists role variables (from `defaults/main.yml`), their defau
 | `talos_proxmox_k8s_vmbr` | `vmbr0` | Proxmox bridge used for VM network interfaces |
 | `talos_proxmox_masters` | See file | List of master VM definitions (name, ip, cores, memory, disk) |
 | `talos_proxmox_workers` | See file | List of worker VM definitions (may include `storage_disk`) |
+| `talos_proxmox_schedule_on_masters` | `true` if no workers, else `false` | Allow workloads on master nodes (removes the control plane taint and, on Talos 1.14, the load balancer exclusion label) |
 | `talos_proxmox_vlan_config` | See file | List of VLAN definitions used to create Multus NADs |
 | `talos_proxmox_nameservers` | `[1.1.1.1, 8.8.8.8]` | DNS servers rendered into Talos configs |
 | `talos_proxmox_search_domains` | `[]` | Search domains rendered into the Talos 1.14 `ResolverConfig` (empty means not set) |

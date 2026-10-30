@@ -47,6 +47,7 @@ kind: HostnameConfig
 auto: "off"
 hostname: {{ talos_proxmox_node.name }}
 {% if talos_proxmox_node in talos_proxmox_masters %}
+{% if talos_proxmox_schedule_on_masters | bool %}
 ---
 apiVersion: v1alpha1
 kind: KubeNodeConfig
@@ -56,6 +57,7 @@ taints:
 labels:
   node.kubernetes.io/exclude-from-external-load-balancers:
     $patch: delete
+{% endif %}
 ---
 apiVersion: v1alpha1
 kind: KubeAPIServerConfig

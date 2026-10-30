@@ -68,7 +68,9 @@ machine:
 {% if not talos_proxmox_modern_config or talos_proxmox_install_cilium or talos_proxmox_enable_gateway_api %}
 cluster:
 {% if not talos_proxmox_modern_config %}
+{% if talos_proxmox_schedule_on_masters | bool %}
   allowSchedulingOnControlPlanes: true
+{% endif %}
   apiServer:
     certSANs:
       - {{ talos_proxmox_cluster_name | split('.') | first }}

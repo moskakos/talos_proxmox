@@ -112,6 +112,12 @@ talos_proxmox_workers:
 # Base interface for VLANs (e.g. eth0, ens18, ...)
 talos_proxmox_vlan_base_interface: "eth0"
 
+# Allow workloads on the master (control plane) nodes. When true, the control plane taint is removed
+# (allowSchedulingOnControlPlanes on Talos < v1.14.0, KubeNodeConfig on Talos >= v1.14.0) and, on Talos >= v1.14.0,
+# the node.kubernetes.io/exclude-from-external-load-balancers label is removed too, so load balancers such as
+# MetalLB (L2) can announce addresses from the masters. Defaults to true only when no workers are defined.
+talos_proxmox_schedule_on_masters: "{{ (talos_proxmox_workers | length == 0) | bool }}"
+
 # VLANs for Cilium (for later service exposure)
 talos_proxmox_vlan_config:
   - name: vlan1 # only use lowercase alphanumeric characters and -
