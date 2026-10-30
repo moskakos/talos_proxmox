@@ -2,58 +2,58 @@
 # Default variables for talos_proxmox role
 # All sensitive and environment-specific data should be overridden in group_vars/host_vars or via extra_vars
 
-proxmox_server: "proxmox.example.com"
-proxmox_port: 8006
-proxmox_url: "https://{{ proxmox_server }}:{{ proxmox_port }}"
-proxmox_api_url: "{{ proxmox_url }}/api2/json"
-proxmox_api_user: "example_proxmox_user"
-proxmox_api_token_id: "example_token_id"
-proxmox_api_token_secret: "example_token"
+talos_proxmox_proxmox_server: "proxmox.example.com"
+talos_proxmox_proxmox_port: 8006
+talos_proxmox_proxmox_url: "https://{{ talos_proxmox_proxmox_server }}:{{ talos_proxmox_proxmox_port }}"
+talos_proxmox_proxmox_api_url: "{{ talos_proxmox_proxmox_url }}/api2/json"
+talos_proxmox_proxmox_api_user: "example_proxmox_user"
+talos_proxmox_proxmox_api_token_id: "example_token_id"
+talos_proxmox_proxmox_api_token_secret: "example_token"
 
-proxmox_node: "proxmox"
-proxmox_storage: "local"
-proxmox_vm_storage: "local-lvm"
-proxmox_storage_url: "{{ proxmox_api_url }}/nodes/{{ proxmox_node }}/storage/{{ proxmox_storage }}"
+talos_proxmox_proxmox_node: "proxmox"
+talos_proxmox_proxmox_storage: "local"
+talos_proxmox_proxmox_vm_storage: "local-lvm"
+talos_proxmox_proxmox_storage_url: "{{ talos_proxmox_proxmox_api_url }}/nodes/{{ talos_proxmox_proxmox_node }}/storage/{{ talos_proxmox_proxmox_storage }}"
 
-talos_version: "v1.11.1"
+talos_proxmox_talos_version: "v1.11.1"
 # The talos image will always use the qemu-guest-agent extension
 # Below you can enable additional extensions if needed
 # Enables support for Longhorn in the Talos ISO (iscsi-tools and util-linux-tools)
-enable_longhorn_support: true
-#talos: "factory.talos.dev/image/ce4c980550dd2ab1b17bbf2b08801c7eb59418eafe8f279833297925d67c7515"
-#talos_iso_download_url: "https://{{ talos_qemu_agent_path }}/{{ talos_version }}/metal-amd64.iso"
+talos_proxmox_enable_longhorn_support: true
+#talos_proxmox_talos: "factory.talos.dev/image/ce4c980550dd2ab1b17bbf2b08801c7eb59418eafe8f279833297925d67c7515"
+#talos_proxmox_talos_iso_download_url: "https://{{ talos_proxmox_talos_qemu_agent_path }}/{{ talos_proxmox_talos_version }}/metal-amd64.iso"
 
-talos_installation_disk_path: "/dev/sda"  # Disk inside VM to install Talos onto (e.g. /dev/sda)
-talos_cpu_type: "kvm64"
+talos_proxmox_talos_installation_disk_path: "/dev/sda"  # Disk inside VM to install Talos onto (e.g. /dev/sda)
+talos_proxmox_talos_cpu_type: "kvm64"
 
-cluster_name: "k8s.example.com"
-cluster_shared_ip: 192.168.100.10
-mgmt_network: "192.168.100.0/24"
-mgmt_gateway: "192.168.100.1"
+talos_proxmox_cluster_name: "k8s.example.com"
+talos_proxmox_cluster_shared_ip: 192.168.100.10
+talos_proxmox_mgmt_network: "192.168.100.0/24"
+talos_proxmox_mgmt_gateway: "192.168.100.1"
 
 # Enable VLAN configuration (activates Multus as well as VLAN interfaces on Proxmox VMs) if set to false the VM interfaces will be configured as access ports
-enable_vlans: true
-# Set this to false if the vms interface should not have any vlan tag. It must be set if enable_vlans is true.
-# If enable_vlans is true the mgmt_vlan_id is used for a mgmt subinterface inside the vm, else it is used on proxmox for the VM interface vlan id
-mgmt_vlan_id: 100
+talos_proxmox_enable_vlans: true
+# Set this to false if the vms interface should not have any vlan tag. It must be set if talos_proxmox_enable_vlans is true.
+# If talos_proxmox_enable_vlans is true the talos_proxmox_mgmt_vlan_id is used for a mgmt subinterface inside the vm, else it is used on proxmox for the VM interface vlan id
+talos_proxmox_mgmt_vlan_id: 100
 
 # Use cilium instead of flannel as CNI. If you intend to use VLANs this must be true.
-install_cilium: "{{ enable_vlans | bool }}"
+talos_proxmox_install_cilium: "{{ talos_proxmox_enable_vlans | bool }}"
 
 # Cilium version to install (must be a valid cilium helm chart version)
-cilium_version: "1.18.2"
+talos_proxmox_cilium_version: "1.18.2"
 
 # Install Gateway API for cilium (requires cilium to be installed)
-enable_gateway_api: "{{ install_cilium | bool }}"
+talos_proxmox_enable_gateway_api: "{{ talos_proxmox_install_cilium | bool }}"
 
 # Gateway API CRD version to install (use version supported by cilium, e.g. v1.2.0 for cilium 1.18.x)
-gateway_api_crds_version: "v1.2.0"
+talos_proxmox_gateway_api_crds_version: "v1.2.0"
 
 # Gateway API CRD source base url
-gateway_api_crds_base_url: "https://raw.githubusercontent.com/kubernetes-sigs/gateway-api/{{ gateway_api_crds_version }}/config/crd"
+talos_proxmox_gateway_api_crds_base_url: "https://raw.githubusercontent.com/kubernetes-sigs/gateway-api/{{ talos_proxmox_gateway_api_crds_version }}/config/crd"
 
 # Gateway API CRDs to install (if empty no CRDs will be installed)
-gateway_api_crds:
+talos_proxmox_gateway_api_crds:
   - type: standard
     name: gateways
   - type: standard
@@ -68,15 +68,15 @@ gateway_api_crds:
     name: tlsroutes
 
 # Enable Wireguard encryption for Cilium (requires cilium to be installed)
-enable_cilium_wireguard: "{{ install_cilium | bool }}"
+talos_proxmox_enable_cilium_wireguard: "{{ talos_proxmox_install_cilium | bool }}"
 
 # Enable node-to-node encryption for Cilium (requires cilium and wireguard to be enabled)
 # False means only pod to pod traffic on different nodes is encrypted
-enable_cilium_node_encryption: false
+talos_proxmox_enable_cilium_node_encryption: false
 
-k8s_vmbr: "vmbr0"
+talos_proxmox_k8s_vmbr: "vmbr0"
 
-masters:
+talos_proxmox_masters:
   - name: master1
     ip: 192.168.100.11
     cores: 2
@@ -93,7 +93,7 @@ masters:
     memory: 4096
     disk: 100
 
-workers:
+talos_proxmox_workers:
   - name: worker1
     ip: 192.168.100.21
     cores: 4
@@ -110,27 +110,27 @@ workers:
     storage_disk_encryption_key: "topsecret" # Option key to encrypt the storage disk, if not set no encryption is used
 
 # Base interface for VLANs (e.g. eth0, ens18, ...)
-vlan_base_interface: "eth0"
+talos_proxmox_vlan_base_interface: "eth0"
 
 # VLANs for Cilium (for later service exposure)
-vlan_config:
+talos_proxmox_vlan_config:
   - name: vlan1 # only use lowercase alphanumeric characters and -
     vlan_id: 101
   - name: vlan2
     vlan_id: 102
 
 # DNS nameservers used in rendered Talos machine configs. Can be overridden in inventory.
-nameservers:
+talos_proxmox_nameservers:
   - 1.1.1.1
   - 8.8.8.8
 
-timeservers:
+talos_proxmox_timeservers:
   - time.cloudflare.com
 
 # Disable IPv6 if not using vlans. If using vlans using IPv6 is recommended so that cilium marks all vlan interfaces as selected.
-disable_ipv6: "{{ enable_vlans | ternary(false, true) | bool }}"
+talos_proxmox_disable_ipv6: "{{ talos_proxmox_enable_vlans | ternary(false, true) | bool }}"
 
-# All kuberentes resources defined in static_resources will be applied after cluster creation
+# All kuberentes resources defined in talos_proxmox_static_resources will be applied after cluster creation
 # This can be used to pre create namespaces, secrets and so on
 # This configuration will be deployed before argocd if both are enabled
 # The static resources are applied in order using the kubernetes.core.k8s module
@@ -146,7 +146,7 @@ disable_ipv6: "{{ enable_vlans | ternary(false, true) | bool }}"
 #   - wait_sleep: Time in seconds to wait between checks (default: 6)
 #   - state: The desired state of the resource (default: present)
 #   - force: If true the resource will be replaced if it already exists (default: false)
-static_resources: []
+talos_proxmox_static_resources: []
   # - definition:
   #     apiVersion: v1
   #     kind: Namespace
@@ -169,13 +169,13 @@ static_resources: []
 
 # ArgoCD configuration
 # Setup argocd and deploy the app-of-apps pattern from the given repo
-install_argocd: false
-argocd_version: "v3.1.5"
-argocd_repo_url: "https://github.com/example/app-of-apps.git"
-argocd_repo_type: "git"  # or "helm"
-argocd_repo_revision: "main"
-argocd_app_name: "app-of-apps"
-argocd_app_namespace: "argocd"
-argocd_app_path: "apps"  # Path in repo for app-of-apps manifest
-argocd_app_dest_namespace: "default"
-argocd_app_dest_server: "https://kubernetes.default.svc"
+talos_proxmox_install_argocd: false
+talos_proxmox_argocd_version: "v3.1.5"
+talos_proxmox_argocd_repo_url: "https://github.com/example/app-of-apps.git"
+talos_proxmox_argocd_repo_type: "git"  # or "helm"
+talos_proxmox_argocd_repo_revision: "main"
+talos_proxmox_argocd_app_name: "app-of-apps"
+talos_proxmox_argocd_app_namespace: "argocd"
+talos_proxmox_argocd_app_path: "apps"  # Path in repo for app-of-apps manifest
+talos_proxmox_argocd_app_dest_namespace: "default"
+talos_proxmox_argocd_app_dest_server: "https://kubernetes.default.svc"

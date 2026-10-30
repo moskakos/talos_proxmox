@@ -6,54 +6,54 @@ machine:
       - deviceSelector:
           physical: true
         dhcp: false
-        {% if enable_vlans -%}
+        {% if talos_proxmox_enable_vlans -%}
         vlans:
-          - vlanId: {{ mgmt_vlan_id }}
+          - vlanId: {{ talos_proxmox_mgmt_vlan_id }}
             dhcp: false
             routes:
               - network: 0.0.0.0/0
-                gateway: {{ mgmt_gateway }}
-          {% for vlan in vlan_config -%}
-          - vlanId: {{ vlan.vlan_id }}
+                gateway: {{ talos_proxmox_mgmt_gateway }}
+          {% for talos_proxmox_vlan in talos_proxmox_vlan_config -%}
+          - vlanId: {{ talos_proxmox_vlan.vlan_id }}
             dhcp: false
             addresses: []
           {% endfor -%}
         {% else -%}
         routes:
           - network: 0.0.0.0/0
-            gateway: {{ mgmt_gateway }}
+            gateway: {{ talos_proxmox_mgmt_gateway }}
         {% endif %}
 
     nameservers:
-        {% for ns in nameservers -%}
-        - {{ ns }}
+        {% for talos_proxmox_ns in talos_proxmox_nameservers -%}
+        - {{ talos_proxmox_ns }}
         {% endfor %}
 
     extraHostEntries:
-      - ip: {{ cluster_shared_ip }}
+      - ip: {{ talos_proxmox_cluster_shared_ip }}
         aliases:
-            - {{ cluster_name | split('.') | first }}
-            - {{ cluster_name }}
+            - {{ talos_proxmox_cluster_name | split('.') | first }}
+            - {{ talos_proxmox_cluster_name }}
 
   install:
-    disk: {{ talos_installation_disk_path }}
-    image: {{ talos_installer_image_url }}
-    wipe: {{ talos_installation_disk_wipe | default(false, true) }}
+    disk: {{ talos_proxmox_talos_installation_disk_path }}
+    image: {{ talos_proxmox_talos_installer_image_url }}
+    wipe: {{ talos_proxmox_talos_installation_disk_wipe | default(false, true) }}
 
   time:
     disabled: false
     servers:
-      {% for ts in timeservers -%}
-      - {{ ts }}
+      {% for talos_proxmox_ts in talos_proxmox_timeservers -%}
+      - {{ talos_proxmox_ts }}
       {% endfor %}
 
   sysctls:
-    {% if enable_longhorn_support -%}
+    {% if talos_proxmox_enable_longhorn_support -%}
     vm.nr_hugepages: "1024"
     {% endif -%}
-    net/ipv6/conf/all/disable_ipv6: "{% if disable_ipv6 %}1{% else %}0{% endif %}"
+    net/ipv6/conf/all/disable_ipv6: "{% if talos_proxmox_disable_ipv6 %}1{% else %}0{% endif %}"
   
-  {% if enable_longhorn_support -%}
+  {% if talos_proxmox_enable_longhorn_support -%}
   kernel:
     modules:
       - name: nvme_tcp
@@ -63,10 +63,10 @@ machine:
 cluster:
   apiServer:
     certSANs:
-      - {{ cluster_name | split('.') | first }}
-      - {{ cluster_shared_ip }}
+      - {{ talos_proxmox_cluster_name | split('.') | first }}
+      - {{ talos_proxmox_cluster_shared_ip }}
 
-  {% if install_cilium -%}
+  {% if talos_proxmox_install_cilium -%}
   network:
     cni:
       name: none
@@ -74,18 +74,18 @@ cluster:
     disabled: true
   {% endif %}
 
-  {% if install_cilium -%}
+  {% if talos_proxmox_install_cilium -%}
   inlineManifests:
     - name: cilium
       contents: |
-        {% for line in cilium_manifest.stdout_lines -%}
+        {% for line in talos_proxmox_cilium_manifest.stdout_lines -%}
         {{ line }}
         {% endfor -%}
   {% endif %}
 
-  {% if enable_gateway_api -%}
+  {% if talos_proxmox_enable_gateway_api -%}
   extraManifests:
-    {% for gw_crd in gateway_api_crds %}
-    - "{{ gateway_api_crds_base_url }}/{{ gw_crd.type }}/gateway.networking.k8s.io_{{ gw_crd.name }}.yaml"
+    {% for talos_proxmox_gw_crd in talos_proxmox_gateway_api_crds %}
+    - "{{ talos_proxmox_gateway_api_crds_base_url }}/{{ talos_proxmox_gw_crd.type }}/gateway.networking.k8s.io_{{ talos_proxmox_gw_crd.name }}.yaml"
     {% endfor %}
   {%- endif -%}

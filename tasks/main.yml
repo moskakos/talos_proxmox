@@ -19,7 +19,7 @@
 # - name: Install and configure Multus CNI
 #   import_tasks: install_multus.yml
 #   tags: [install_multus]
-#   when: enable_vlans
+#   when: talos_proxmox_enable_vlans
 
 - name: Deploy static resources
   import_tasks: deploy_static_resources.yml
@@ -28,7 +28,7 @@
 - name: Install ArgoCD
   import_tasks: install_argocd.yml
   tags: [install_argocd]
-  when: install_argocd
+  when: talos_proxmox_install_argocd
 
 - name: Cleanup temporary files
   import_tasks: cleanup.yml

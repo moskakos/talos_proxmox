@@ -25,11 +25,11 @@ cgroup:
     enabled: false
   hostRoot: /sys/fs/cgroup
 
-{% if enable_vlans %}
+{% if talos_proxmox_enable_vlans %}
 devices:
-  - "{{ vlan_base_interface }}.{{ mgmt_vlan_id }}"
-{% for vlan in vlan_config %}
-  - "{{ vlan_base_interface }}.{{ vlan.vlan_id }}"
+  - "{{ talos_proxmox_vlan_base_interface }}.{{ talos_proxmox_mgmt_vlan_id }}"
+{% for talos_proxmox_vlan in talos_proxmox_vlan_config %}
+  - "{{ talos_proxmox_vlan_base_interface }}.{{ talos_proxmox_vlan.vlan_id }}"
 {% endfor %}
 {% endif %}
 
@@ -56,7 +56,7 @@ securityContext:
 operator:
   rollOutPods: true
 
-{% if enable_gateway_api %}
+{% if talos_proxmox_enable_gateway_api %}
 gatewayAPI:
   enabled: true
   enableAlpn: true
@@ -65,11 +65,11 @@ gatewayAPI:
     create: "true"
 {% endif %}
 
-{% if enable_cilium_wireguard %}
+{% if talos_proxmox_enable_cilium_wireguard %}
 encryption:
   enabled: true
   type: wireguard
-  {% if enable_cilium_node_encryption -%}
+  {% if talos_proxmox_enable_cilium_node_encryption -%}
   nodeEncryption: true
   {% endif %}
 {% endif %}

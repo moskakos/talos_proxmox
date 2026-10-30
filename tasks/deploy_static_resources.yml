@@ -13,6 +13,6 @@
     wait_timeout: "{{ item.wait_timeout | default(omit, true) }}"
     wait_sleep: "{{ item.wait_sleep | default(omit, true) }}"
     force: "{{ item.force | default(omit, true) }}"
-  loop: "{{ static_resources }}"
+  loop: "{{ talos_proxmox_static_resources }}"
   loop_control:
     label: "{{ item.definition.metadata.name if item.definition is defined else item.name | default('kubernetes resource', true) }}"

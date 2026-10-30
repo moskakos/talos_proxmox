@@ -3,44 +3,44 @@
 
 - name: Get Talos VM network information
   community.proxmox.proxmox_vm_info:
-    api_user: "{{ proxmox_api_user }}"
-    api_host: "{{ proxmox_server }}"
-    api_port: "{{ proxmox_port }}"
-    api_token_id: "{{ proxmox_api_token_id }}"
-    api_token_secret: "{{ proxmox_api_token_secret }}"
-    node: "{{ proxmox_node }}"
+    api_user: "{{ talos_proxmox_proxmox_api_user }}"
+    api_host: "{{ talos_proxmox_proxmox_server }}"
+    api_port: "{{ talos_proxmox_proxmox_port }}"
+    api_token_id: "{{ talos_proxmox_proxmox_api_token_id }}"
+    api_token_secret: "{{ talos_proxmox_proxmox_api_token_secret }}"
+    node: "{{ talos_proxmox_proxmox_node }}"
     name: "{{ item.name }}"
     type: qemu
     network: true
-  register: vm_info
-  loop: "{{ masters + workers }}"
+  register: talos_proxmox_vm_info
+  loop: "{{ talos_proxmox_masters + talos_proxmox_workers }}"
   loop_control:
     label: "{{ item.name }}"
 
 - name: Build node -> primary IPv4 map (exclude loopback)
   vars:
-    net_entries: "{{ vm.proxmox_vms[0].network | default([]) }}"
-    all_ips: "{{ net_entries | selectattr('ip-addresses','defined') | map(attribute='ip-addresses') | sum(start=[]) }}"
-    ipv4s: "{{ all_ips | selectattr('ip-address-type','equalto','ipv4') | map(attribute='ip-address') | reject('match','^127\\.') | list }}"
+    talos_proxmox_net_entries: "{{ talos_proxmox_vm.proxmox_vms[0].network | default([]) }}"
+    talos_proxmox_all_ips: "{{ talos_proxmox_net_entries | selectattr('ip-addresses','defined') | map(attribute='ip-addresses') | sum(start=[]) }}"
+    talos_proxmox_ipv4s: "{{ talos_proxmox_all_ips | selectattr('ip-address-type','equalto','ipv4') | map(attribute='ip-address') | reject('match','^127\\.') | list }}"
   ansible.builtin.set_fact:
-    talos_node_ips: "{{ talos_node_ips | default({}) | combine({ vm.item.name: (ipv4s[0] if ipv4s | length > 0 else None) }) }}"
-  loop: "{{ vm_info.results }}"
+    talos_proxmox_talos_node_ips: "{{ talos_proxmox_talos_node_ips | default({}) | combine({ talos_proxmox_vm.item.name: (talos_proxmox_ipv4s[0] if talos_proxmox_ipv4s | length > 0 else None) }) }}"
+  loop: "{{ talos_proxmox_vm_info.results }}"
   loop_control:
-    loop_var: vm
-    label: "{{ vm.item.name }}"
+    loop_var: talos_proxmox_vm
+    label: "{{ talos_proxmox_vm.item.name }}"
 
 - name: Install Talos on master nodes
   include_tasks: install_talos_node.yml
   vars:
-    current_node_type: "controlplane"
-  loop: "{{ masters }}"
+    talos_proxmox_current_node_type: "controlplane"
+  loop: "{{ talos_proxmox_masters }}"
   loop_control:
     label: "{{ item.name }}"
 
 - name: Install Talos on worker nodes
   include_tasks: install_talos_node.yml
   vars:
-    current_node_type: "worker"
-  loop: "{{ workers }}"
+    talos_proxmox_current_node_type: "worker"
+  loop: "{{ talos_proxmox_workers }}"
   loop_control:
     label: "{{ item.name }}"

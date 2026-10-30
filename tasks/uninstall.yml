@@ -3,15 +3,15 @@
 
 - name: Delete talos VMs
   community.proxmox.proxmox_kvm:
-    api_user: "{{ proxmox_api_user }}"
-    api_host: "{{ proxmox_server }}"
-    api_port: "{{ proxmox_port }}"
-    api_token_id: "{{ proxmox_api_token_id }}"
-    api_token_secret: "{{ proxmox_api_token_secret }}"
-    node: "{{ proxmox_node }}"
+    api_user: "{{ talos_proxmox_proxmox_api_user }}"
+    api_host: "{{ talos_proxmox_proxmox_server }}"
+    api_port: "{{ talos_proxmox_proxmox_port }}"
+    api_token_id: "{{ talos_proxmox_proxmox_api_token_id }}"
+    api_token_secret: "{{ talos_proxmox_proxmox_api_token_secret }}"
+    node: "{{ talos_proxmox_proxmox_node }}"
     name: "{{ item.name }}"
     force: true
     state: absent
-  loop: "{{ masters + workers }}"
+  loop: "{{ talos_proxmox_masters + talos_proxmox_workers }}"
   loop_control:
     label: "{{ item.name }}"

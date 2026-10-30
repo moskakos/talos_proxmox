@@ -10,23 +10,23 @@
 - name: Add cilium helm repo if cilium is to be installed
   ansible.builtin.command:
     cmd: helm repo add cilium https://helm.cilium.io/
-  when: install_cilium
+  when: talos_proxmox_install_cilium
 
 - name: Generate cilium values file
   ansible.builtin.template:
     src: cilium_values.yaml.j2
     dest: /tmp/.talos/cilium_values.yaml
-  when: install_cilium
+  when: talos_proxmox_install_cilium
 
 - name: Generate cilium manifests
   ansible.builtin.command:
     cmd: >-
       helm template cilium cilium/cilium
-      --version {{ cilium_version }}
+      --version {{ talos_proxmox_cilium_version }}
       --namespace kube-system
       --values /tmp/.talos/cilium_values.yaml
-  when: install_cilium
-  register: cilium_manifest
+  when: talos_proxmox_install_cilium
+  register: talos_proxmox_cilium_manifest
 
 - name: Create Talos ISO customization file
   ansible.builtin.template:
@@ -42,12 +42,12 @@
     headers:
       Content-Type: "application/x-yaml"
     return_content: yes
-  register: talos_iso_response
+  register: talos_proxmox_talos_iso_response
 
 - name: Set Talos ISO download URL and Installer Image
   ansible.builtin.set_fact:
-    talos_installer_image_url: "factory.talos.dev/metal-installer/{{ talos_iso_response.json.id }}:{{ talos_version }}"
-    talos_iso_download_url: "https://factory.talos.dev/image/{{ talos_iso_response.json.id }}/{{ talos_version }}/metal-amd64.iso"
+    talos_proxmox_talos_installer_image_url: "factory.talos.dev/metal-installer/{{ talos_proxmox_talos_iso_response.json.id }}:{{ talos_proxmox_talos_version }}"
+    talos_proxmox_talos_iso_download_url: "https://factory.talos.dev/image/{{ talos_proxmox_talos_iso_response.json.id }}/{{ talos_proxmox_talos_version }}/metal-amd64.iso"
 
 - name: Create Talos config patch file
   ansible.builtin.template:
@@ -57,12 +57,12 @@
 - name: Create talos node patch file
   ansible.builtin.template:
     src: talos_node_patch.yaml.j2
-    dest: /tmp/.talos/talos_node_patch_{{ node.name }}.yaml
-  loop: "{{ masters + workers }}"
+    dest: /tmp/.talos/talos_node_patch_{{ talos_proxmox_node.name }}.yaml
+  loop: "{{ talos_proxmox_masters + talos_proxmox_workers }}"
   loop_control:
-    loop_var: node
-    index_var: node_idx
-    label: "{{ node.name }}"
+    loop_var: talos_proxmox_node
+    index_var: talos_proxmox_node_idx
+    label: "{{ talos_proxmox_node.name }}"
 
 - name: Generate talos secrets
   ansible.builtin.command:
@@ -74,9 +74,8 @@
 - name: Generate talos configuration files
   ansible.builtin.command:
     cmd: >-
-      talosctl gen config {{ cluster_name }} https://{{ cluster_name }}:6443
+      talosctl gen config {{ talos_proxmox_cluster_name }} https://{{ talos_proxmox_cluster_name }}:6443
       --with-secrets /tmp/.talos/talos_secrets.yaml
       --output /tmp/.talos
       --config-patch @/tmp/.talos/talos_config_patch.yaml
       --force
-
