@@ -12,7 +12,8 @@
       content: iso
       filename: "talos-{{ talos_proxmox_talos_version }}-amd64.iso"
       url: "{{ talos_proxmox_talos_iso_download_url }}"
-    validate_certs: no
+    validate_certs: true
+    ca_path: "{{ talos_proxmox_proxmox_ca_path | default(omit, true) }}"
     return_content: yes
   when: talos_proxmox_proxmox_api_token_id is defined and talos_proxmox_proxmox_api_token_secret is defined and (talos_proxmox_proxmox_api_token_id | length) > 0
 
@@ -22,11 +23,11 @@
     method: GET
     headers:
       Authorization: "PVEAPIToken={{ talos_proxmox_proxmox_api_user }}!{{ talos_proxmox_proxmox_api_token_id }}={{ talos_proxmox_proxmox_api_token_secret }}"
-    validate_certs: no
+    validate_certs: true
+    ca_path: "{{ talos_proxmox_proxmox_ca_path | default(omit, true) }}"
     return_content: yes
   register: talos_proxmox_iso_content
   until: (talos_proxmox_proxmox_storage ~ ':iso/talos-' ~ talos_proxmox_talos_version ~ '-amd64.iso') in (talos_proxmox_iso_content.json.data | map(attribute='volid') | list)
-  failed_when: false
   retries: 10
   delay: 6
 

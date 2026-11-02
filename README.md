@@ -218,6 +218,12 @@ talos_proxmox_proxmox_ca_path: /polku/pki-root-ca.pem
 An empty value (the default) omits `ca_path` and uses the modules' default CA
 trust. The Proxmox API hostname must match the server certificate.
 
+The Proxmox ISO download and storage polling requests also validate TLS
+certificates and use this CA bundle. Private PKI installations that previously
+relied on those requests skipping validation must configure a trusted CA.
+Storage polling reports connection and certificate errors rather than ignoring
+them.
+
 All role variables use the `talos_proxmox_` prefix. Update existing inventory,
 group_vars, host_vars and extra_vars overrides to the new names; old names are
 no longer supported. The prefix is added to the complete previous name, for
