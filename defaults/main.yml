@@ -2,43 +2,44 @@
 # Default variables for talos_proxmox role
 # All sensitive and environment-specific data should be overridden in group_vars/host_vars or via extra_vars
 
-talos_proxmox_proxmox_server: "proxmox.example.com"
+talos_proxmox_proxmox_server: "pve-01.example.com"
 talos_proxmox_proxmox_port: 8006
 # Optional PEM CA bundle on the host executing the modules, e.g. /polku/pki-root-ca.pem.
 # Empty uses the modules' default CA trust.
-talos_proxmox_proxmox_ca_path: ""
+talos_proxmox_proxmox_ca_path: "/path/to/ca.pem"
 talos_proxmox_proxmox_url: "https://{{ talos_proxmox_proxmox_server }}:{{ talos_proxmox_proxmox_port }}"
 talos_proxmox_proxmox_api_url: "{{ talos_proxmox_proxmox_url }}/api2/json"
-talos_proxmox_proxmox_api_user: "example_proxmox_user"
-talos_proxmox_proxmox_api_token_id: "example_token_id"
-talos_proxmox_proxmox_api_token_secret: "example_token"
+talos_proxmox_proxmox_api_user: "talos@pve"
+talos_proxmox_proxmox_api_token_id: "token"
+talos_proxmox_proxmox_api_token_secret: "secret"
 
-talos_proxmox_proxmox_node: "proxmox"
-talos_proxmox_proxmox_storage: "local"
-talos_proxmox_proxmox_vm_storage: "local-lvm"
+talos_proxmox_proxmox_node: "pve-01"
+talos_proxmox_proxmox_storage: "truenas-01-isos"
+talos_proxmox_proxmox_vm_storage: "nvme"
 talos_proxmox_proxmox_storage_url: "{{ talos_proxmox_proxmox_api_url }}/nodes/{{ talos_proxmox_proxmox_node }}/storage/{{ talos_proxmox_proxmox_storage }}"
 
-talos_proxmox_talos_version: "v1.14.5"
+talos_proxmox_talos_version: "v1.14.2"
 # The talos image will always use the qemu-guest-agent extension
 # Below you can enable additional extensions if needed
 # Enables support for Longhorn in the Talos ISO (iscsi-tools and util-linux-tools)
-talos_proxmox_enable_longhorn_support: true
-#talos_proxmox_talos: "factory.talos.dev/image/ce4c980550dd2ab1b17bbf2b08801c7eb59418eafe8f279833297925d67c7515"
-#talos_proxmox_talos_iso_download_url: "https://{{ talos_proxmox_talos_qemu_agent_path }}/{{ talos_proxmox_talos_version }}/metal-amd64.iso"
+talos_proxmox_enable_longhorn_support: false
+## talos_proxmox_talos: "factory.talos.dev/image/ce4c980550dd2ab1b17bbf2b08801c7eb59418eafe8f279833297925d67c7515"
+## talos_proxmox_talos_iso_download_url: "https://{{ talos_proxmox_talos_qemu_agent_path }}/{{ talos_proxmox_talos_version }}/metal-amd64.iso"
 
 talos_proxmox_talos_installation_disk_path: "/dev/sda"  # Disk inside VM to install Talos onto (e.g. /dev/sda)
-talos_proxmox_talos_cpu_type: "kvm64"
+talos_proxmox_talos_cpu_type: "host"
 
-talos_proxmox_cluster_name: "k8s.example.com"
-talos_proxmox_cluster_shared_ip: 192.168.100.10
-talos_proxmox_mgmt_network: "192.168.100.0/24"
-talos_proxmox_mgmt_gateway: "192.168.100.1"
+talos_proxmox_cluster_name: "kube.example.com"
+talos_proxmox_cluster_shared_ip: 192.168.1.20
+talos_proxmox_mgmt_network: "192.168.1.0/24"
+talos_proxmox_mgmt_gateway: "192.168.1.254"
 
 # Enable VLAN configuration (activates Multus as well as VLAN interfaces on Proxmox VMs) if set to false the VM interfaces will be configured as access ports
-talos_proxmox_enable_vlans: true
+talos_proxmox_enable_vlans: false
 # Set this to false if the vms interface should not have any vlan tag. It must be set if talos_proxmox_enable_vlans is true.
-# If talos_proxmox_enable_vlans is true the talos_proxmox_mgmt_vlan_id is used for a mgmt subinterface inside the vm, else it is used on proxmox for the VM interface vlan id
-talos_proxmox_mgmt_vlan_id: 100
+# If talos_proxmox_enable_vlans is true the talos_proxmox_mgmt_vlan_id is used for a mgmt subinterface inside the vm,
+# else it is used on proxmox for the VM interface vlan id
+talos_proxmox_mgmt_vlan_id: 12
 
 # Use cilium instead of flannel as CNI. If you intend to use VLANs this must be true.
 talos_proxmox_install_cilium: "{{ talos_proxmox_enable_vlans | bool }}"
@@ -80,37 +81,23 @@ talos_proxmox_enable_cilium_node_encryption: false
 talos_proxmox_k8s_vmbr: "vmbr0"
 
 talos_proxmox_masters:
-  - name: master1
-    ip: 192.168.100.11
+  - name: talos-01
+    ip: 192.168.1.11
     cores: 2
     memory: 4096
-    disk: 100
-  - name: master2
-    ip: 192.168.100.12
+    disk: 64
+  - name: talos-02
+    ip: 192.168.1.12
     cores: 2
     memory: 4096
-    disk: 100
-  - name: master3
-    ip: 192.168.100.13
+    disk: 64
+  - name: talos-03
+    ip: 192.168.1.13
     cores: 2
     memory: 4096
-    disk: 100
+    disk: 64
 
-talos_proxmox_workers:
-  - name: worker1
-    ip: 192.168.100.21
-    cores: 4
-    memory: 8192
-    disk: 100
-    storage_disk: 200
-    storage_disk_encryption_key: "topsecret" # Option key to encrypt the storage disk, if not set no encryption is used
-  - name: worker2
-    ip: 192.168.100.22
-    cores: 4
-    memory: 8192
-    disk: 100
-    storage_disk: 200
-    storage_disk_encryption_key: "topsecret" # Option key to encrypt the storage disk, if not set no encryption is used
+talos_proxmox_workers: []
 
 # Base interface for VLANs (e.g. eth0, ens18, ...)
 talos_proxmox_vlan_base_interface: "eth0"
@@ -129,19 +116,22 @@ talos_proxmox_vlan_config:
 
 # DNS nameservers used in rendered Talos machine configs. Can be overridden in inventory.
 talos_proxmox_nameservers:
-  - 1.1.1.1
-  - 8.8.8.8
+  - 192.168.1.1
+  - 192.168.1.2
 
 # Search domains appended to short hostnames through ResolverConfig. Empty means not set.
 # Example: ["example.com"]
-talos_proxmox_search_domains: []
+talos_proxmox_search_domains:
+  - example.com
+  - internal.example.com
 
 # Optional host DNS settings in ResolverConfig. Empty means not set.
 # Example: { enabled: true, forwardKubeDNSToHost: true, resolveMemberNames: true }
-talos_proxmox_host_dns: {}
+# or empty: {}
+talos_proxmox_host_dns: { enabled: true, forwardKubeDNSToHost: true, resolveMemberNames: true }
 
 talos_proxmox_timeservers:
-  - time.cloudflare.com
+  - time.example.com
 
 # Disable IPv6 if not using vlans. If using vlans using IPv6 is recommended so that cilium marks all vlan interfaces as selected.
 talos_proxmox_disable_ipv6: "{{ talos_proxmox_enable_vlans | ternary(false, true) | bool }}"
