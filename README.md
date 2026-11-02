@@ -206,6 +206,18 @@ talos_proxmox_workers:
 
 ## Variables
 
+### Proxmox certificate authority
+
+For a Proxmox API certificate issued by a private PKI, configure a PEM CA
+bundle on the host executing the Ansible modules (localhost in the example):
+
+```yaml
+talos_proxmox_proxmox_ca_path: /polku/pki-root-ca.pem
+```
+
+An empty value (the default) omits `ca_path` and uses the modules' default CA
+trust. The Proxmox API hostname must match the server certificate.
+
 All role variables use the `talos_proxmox_` prefix. Update existing inventory,
 group_vars, host_vars and extra_vars overrides to the new names; old names are
 no longer supported. The prefix is added to the complete previous name, for
@@ -217,6 +229,7 @@ The following table lists role variables (from `defaults/main.yml`), their defau
 |---|---|---|
 | `talos_proxmox_proxmox_server` | `proxmox.example.com` | Hostname or IP of the Proxmox server |
 | `talos_proxmox_proxmox_port` | `8006` | Proxmox API port |
+| `talos_proxmox_proxmox_ca_path` | `""` | Optional PEM CA bundle path on the module execution host |
 | `talos_proxmox_proxmox_url` | `https://{{ talos_proxmox_proxmox_server }}:{{ talos_proxmox_proxmox_port }}` | Base Proxmox URL (derived) |
 | `talos_proxmox_proxmox_api_url` | `{{ talos_proxmox_proxmox_url }}/api2/json` | Full Proxmox API base URL (derived) |
 | `talos_proxmox_proxmox_api_user` | `example_proxmox_user` | Proxmox API user for token authentication |

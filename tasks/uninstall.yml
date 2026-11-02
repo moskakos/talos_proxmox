@@ -3,6 +3,7 @@
 
 - name: Delete talos VMs
   community.proxmox.proxmox_kvm:
+    ca_path: "{{ talos_proxmox_proxmox_ca_path | default(omit, true) }}"
     api_user: "{{ talos_proxmox_proxmox_api_user }}"
     api_host: "{{ talos_proxmox_proxmox_server }}"
     api_port: "{{ talos_proxmox_proxmox_port }}"

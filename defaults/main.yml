@@ -4,6 +4,9 @@
 
 talos_proxmox_proxmox_server: "proxmox.example.com"
 talos_proxmox_proxmox_port: 8006
+# Optional PEM CA bundle on the host executing the modules, e.g. /polku/pki-root-ca.pem.
+# Empty uses the modules' default CA trust.
+talos_proxmox_proxmox_ca_path: ""
 talos_proxmox_proxmox_url: "https://{{ talos_proxmox_proxmox_server }}:{{ talos_proxmox_proxmox_port }}"
 talos_proxmox_proxmox_api_url: "{{ talos_proxmox_proxmox_url }}/api2/json"
 talos_proxmox_proxmox_api_user: "example_proxmox_user"
