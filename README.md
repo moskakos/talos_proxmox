@@ -3,6 +3,7 @@
 This Ansible role automates the provisioning and configuration of a Talos-based Kubernetes cluster on Proxmox.
 
 ## Features
+
 - Automated VM provisioning on Proxmox
 - Talos OS configuration and bootstrapping
 - Multus CNI installation and VLAN network setup (optional)
@@ -51,16 +52,19 @@ More documentation:
 
 1. Install talosctl: https://www.talos.dev/v1.11/talos-guides/install/talosctl/
 2. Install python dependencies:
+
    ```bash
    python -m pip install requests kubernetes PyYAML jsonpatch proxmoxer jmespath netaddr
    ```
 3. Install ansible galaxy dependencies:
+
    ```bash
    ansible-galaxy collection install community.general community.proxmox kubernetes.core ansible.utils
    ```
 4. Install this role
+
    ```bash
-   ansible-galaxy role install git+https://github.com/it-dfl/talos_proxmox
+   ansible-galaxy role install git+https://github.com/moskakos/talos_proxmox
    ```
 
 ## Sequence
@@ -80,15 +84,17 @@ The following sequence describes what the role does in order (if called without 
 
 Create a playbook calling the role:
 install_cluster.yml
+
 ```yaml
 - hosts: localhost
-   gather_facts: true
-   roles:
-      - role: talos_proxmox
+  gather_facts: true
+  roles:
+    - talos_proxmox
 ```
 
 Create an inventory that overrites the default values with your needs:
 inventory/<env>/group_vars/all.yml
+
 ```yaml
 talos_proxmox_proxmox_server: "my-proxmox.test.local"
 talos_proxmox_proxmox_api_user: "root"
@@ -136,6 +142,7 @@ talos_proxmox_workers:
 ```
 
 Now run the playbook to install the cluster:
+
 ```bash
 ansible-playbook -i inventory/<env>/ install_cluster.yml
 ```
@@ -193,6 +200,7 @@ talos_proxmox_mgmt_vlan_id: 99
 ### Disk Encryption
 
 Disk encryption of the primary disk is not supported by this role. However you can simply configure disk encryption of the secondary disk like this:
+
 ```yaml
 talos_proxmox_workers:
   - name: worker1
