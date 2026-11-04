@@ -144,7 +144,6 @@ talos_proxmox_disable_ipv6: "{{ talos_proxmox_enable_vlans | ternary(false, true
 
 # All kuberentes resources defined in talos_proxmox_static_resources will be applied after cluster creation
 # This can be used to pre create namespaces, secrets and so on
-# This configuration will be deployed before argocd if both are enabled
 # The static resources are applied in order using the kubernetes.core.k8s module
 # The following keywords are supported for each item in the list:
 #   - definition: A full kubernetes resource definition as a dictionary
@@ -163,7 +162,7 @@ talos_proxmox_static_resources: []
   #     apiVersion: v1
   #     kind: Namespace
   #     metadata:
-  #       name: argocd
+  #       name: testing
   # - definition:
   #     apiVersion: apps/v1
   #     kind: Deployment
@@ -177,17 +176,3 @@ talos_proxmox_static_resources: []
   #     type: Progressing
   #     status: Unknown
   #     reason: DeploymentPaused
-
-
-# ArgoCD configuration
-# Setup argocd and deploy the app-of-apps pattern from the given repo
-talos_proxmox_install_argocd: false
-talos_proxmox_argocd_version: "v3.1.5"
-talos_proxmox_argocd_repo_url: "https://github.com/example/app-of-apps.git"
-talos_proxmox_argocd_repo_type: "git"  # or "helm"
-talos_proxmox_argocd_repo_revision: "main"
-talos_proxmox_argocd_app_name: "app-of-apps"
-talos_proxmox_argocd_app_namespace: "argocd"
-talos_proxmox_argocd_app_path: "apps"  # Path in repo for app-of-apps manifest
-talos_proxmox_argocd_app_dest_namespace: "default"
-talos_proxmox_argocd_app_dest_server: "https://kubernetes.default.svc"

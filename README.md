@@ -8,7 +8,6 @@ This Ansible role automates the provisioning and configuration of a Talos-based 
 - Talos OS configuration and bootstrapping
 - Cilium CNI installation and VLAN network setup (optional)
 - Configuration of static kubernetes resources (for example secrets)
-- ArgoCD installation and app-of-apps deployment
 
 ## Requirements
 
@@ -120,7 +119,6 @@ The following sequence describes what the role does in order (if called without 
 - Install Talos on the VMs by applying the talos configuration; switch to trunk if vlans are enabled
 - Bootstrap the talos cluster, wait for the cluster to be ready and get the kube config
 - Create all k8s resources defined in "talos_proxmox_static_resources"
-- Install argocd if enabled and configure the repository and application
 - Cleanup temporary files
 
 ## Minimal Example
@@ -198,7 +196,6 @@ You can target specific steps or do other tasks by calling the role with specifi
   - `install_talos`: Install Talos on the VMs by applying the talos configuration
   - `bootstrap_cluster`: Bootstrap the talos cluster
    - `deploy_static_resources`: Create all k8s resources defined in "talos_proxmox_static_resources"
-   - `install_argocd`: Install argocd if enabled
    - `cleanup`: Do cleanup tasks after the installation
   - `uninstall`: Uninstall the talos cluster by deleting the proxmox VMs
 
@@ -284,7 +281,7 @@ The following table lists role variables (from `defaults/main.yml`), their defau
 ### Integration testing status
 
 Cilium, Gateway API, WireGuard pod and node encryption, VLAN device selection,
-Longhorn prerequisites and ArgoCD installation/version selection are implemented
+and Longhorn prerequisites are implemented
 but have not been integration-tested by the maintainer. The related variables
 are marked **Integration untested** below. Offline rendering and configuration
 validation do not establish that these features work in a running cluster.
@@ -340,16 +337,6 @@ settings only; the role does not install Longhorn.
 | `talos_proxmox_timeservers` | `[time.example.com]` | NTP/time servers for Talos configs |
 | `talos_proxmox_disable_ipv6` | `true` when VLANs disabled, else `false` | Disable IPv6 in rendered Talos configs if true |
 | `talos_proxmox_static_resources` | `[]` | List of k8s resources to apply after cluster creation (see file) |
-| `talos_proxmox_install_argocd` | `false` | **Integration untested.** Whether to install ArgoCD after cluster bootstrap |
-| `talos_proxmox_argocd_version` | `v3.1.5` | **Integration untested.** ArgoCD release used for the installation manifest |
-| `talos_proxmox_argocd_repo_url` | `https://github.com/example/app-of-apps.git` | Repo URL for ArgoCD app-of-apps deployment |
-| `talos_proxmox_argocd_repo_type` | `git` | Type of repo for ArgoCD (git or helm) |
-| `talos_proxmox_argocd_repo_revision` | `main` | Revision/branch for the ArgoCD repo |
-| `talos_proxmox_argocd_app_name` | `app-of-apps` | Name of the app-of-apps application in ArgoCD |
-| `talos_proxmox_argocd_app_namespace` | `argocd` | Namespace where ArgoCD will be installed |
-| `talos_proxmox_argocd_app_path` | `apps` | Path inside repo for the app-of-apps manifests |
-| `talos_proxmox_argocd_app_dest_namespace` | `default` | Default destination namespace used by the app-of-apps |
-| `talos_proxmox_argocd_app_dest_server` | `https://kubernetes.default.svc` | Kubernetes API server address for ArgoCD apps |
 
 ## License
 MIT

@@ -28,11 +28,6 @@
   import_tasks: deploy_static_resources.yml
   tags: [deploy_static_resources]
 
-- name: Install ArgoCD
-  import_tasks: install_argocd.yml
-  tags: [install_argocd]
-  when: talos_proxmox_install_argocd
-
 - name: Cleanup temporary files
   import_tasks: cleanup.yml
   tags: [cleanup]
