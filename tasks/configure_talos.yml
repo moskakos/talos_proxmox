@@ -1,6 +1,15 @@
 ---
 # Generate and distribute Talos configuration files
 
+- name: Validate management network CIDR
+  ansible.builtin.assert:
+    that:
+      - talos_proxmox_mgmt_network is string
+      - "'/' in talos_proxmox_mgmt_network"
+      - (talos_proxmox_mgmt_network | ansible.utils.ipv4('net')) is not false
+    fail_msg: "Set talos_proxmox_mgmt_network to a valid IPv4 network in CIDR notation, for example 192.168.1.0/24."
+    quiet: true
+
 - name: Ensure hidden talos directory exists
   ansible.builtin.file:
     path: /tmp/.talos

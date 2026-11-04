@@ -10,14 +10,14 @@ machine:
         vlans:
           - vlanId: {{ talos_proxmox_mgmt_vlan_id }}
             addresses:
-              - {{ talos_proxmox_node.ip }}/24
+              - {{ talos_proxmox_node.ip }}/{{ talos_proxmox_mgmt_network | ansible.utils.ipaddr('prefix') }}
 {% if talos_proxmox_node in talos_proxmox_masters %}
             vip:
               ip: {{ talos_proxmox_cluster_shared_ip }}
 {% endif %}
 {% else %}
         addresses:
-          - {{ talos_proxmox_node.ip }}/24
+          - {{ talos_proxmox_node.ip }}/{{ talos_proxmox_mgmt_network | ansible.utils.ipaddr('prefix') }}
         {% if talos_proxmox_node is in talos_proxmox_masters -%}
         vip:
           ip: {{ talos_proxmox_cluster_shared_ip }}
