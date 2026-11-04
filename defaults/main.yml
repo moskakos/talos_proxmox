@@ -19,12 +19,18 @@ talos_proxmox_proxmox_vm_storage: "nvme"
 talos_proxmox_proxmox_storage_url: "{{ talos_proxmox_proxmox_api_url }}/nodes/{{ talos_proxmox_proxmox_node }}/storage/{{ talos_proxmox_proxmox_storage }}"
 
 talos_proxmox_talos_version: "v1.14.5"
-# The talos image will always use the qemu-guest-agent extension
-# Below you can enable additional extensions if needed
-# Enables support for Longhorn in the Talos ISO (iscsi-tools and util-linux-tools)
+# Additional official extensions: https://github.com/siderolabs/extensions#extension-catalog
+# qemu-guest-agent is always included; Proxmox uses it to discover VM IP addresses.
+# Longhorn requires these extensions (also added automatically by enable_longhorn_support):
+# talos_proxmox_talos_extensions:
+#   - siderolabs/iscsi-tools
+#   - siderolabs/util-linux-tools
+talos_proxmox_talos_extensions: []
+
+# Automatically includes siderolabs/iscsi-tools and siderolabs/util-linux-tools;
+# no need to list them in talos_proxmox_talos_extensions when this is true.
+# Also applies existing kernel/sysctl prerequisites; does not install Longhorn.
 talos_proxmox_enable_longhorn_support: false
-## talos_proxmox_talos: "factory.talos.dev/image/ce4c980550dd2ab1b17bbf2b08801c7eb59418eafe8f279833297925d67c7515"
-## talos_proxmox_talos_iso_download_url: "https://{{ talos_proxmox_talos_qemu_agent_path }}/{{ talos_proxmox_talos_version }}/metal-amd64.iso"
 
 talos_proxmox_talos_installation_disk_path: "/dev/sda"  # Disk inside VM to install Talos onto (e.g. /dev/sda)
 talos_proxmox_talos_cpu_type: "host"

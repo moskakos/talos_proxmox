@@ -1,8 +1,8 @@
+{% set talos_proxmox_extensions = ['siderolabs/qemu-guest-agent'] + talos_proxmox_talos_extensions %}
+{% if talos_proxmox_enable_longhorn_support %}
+{% set talos_proxmox_extensions = talos_proxmox_extensions + ['siderolabs/iscsi-tools', 'siderolabs/util-linux-tools'] %}
+{% endif %}
 customization:
   systemExtensions:
     officialExtensions:
-      - siderolabs/qemu-guest-agent
-      {% if talos_proxmox_enable_longhorn_support -%}
-      - siderolabs/iscsi-tools
-      - siderolabs/util-linux-tools
-      {% endif %}
+{{ talos_proxmox_extensions | unique | list | to_nice_yaml | trim | indent(6, true) }}

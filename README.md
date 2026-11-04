@@ -50,6 +50,48 @@ More documentation:
 - [DNS settings and short hostnames](docs/dns-short-hostnames.md)
 - [HAProxy on pfSense as a load balancer for the Talos API](docs/haproxy-talos-api.md)
 
+### Official system extensions
+
+Select additional extensions using their `siderolabs/...` names from the
+[official extension catalog](https://github.com/siderolabs/extensions#extension-catalog).
+Use [Talos Image Factory](https://factory.talos.dev/) to check availability for
+your selected Talos version and the role's `amd64` architecture. Do not supply
+container image tags or digests in this list. Some extensions need additional
+configuration; including them in the image does not configure their services.
+
+The role always includes `siderolabs/qemu-guest-agent`, even when the list is
+empty. Proxmox uses the guest agent to discover VM IP addresses before applying
+the Talos configuration. Duplicate extensions are included only once.
+
+Longhorn requires `siderolabs/iscsi-tools` and `siderolabs/util-linux-tools`:
+
+```yaml
+talos_proxmox_talos_extensions:
+  - siderolabs/iscsi-tools
+  - siderolabs/util-linux-tools
+```
+
+Alternatively, `talos_proxmox_enable_longhorn_support: true` adds those two
+extensions automatically, together with the role's existing kernel modules
+(`nvme_tcp`, `vfio_pci`) and `vm.nr_hugepages: "1024"` setting. With this switch
+enabled, you do not need to list those extensions in
+`talos_proxmox_talos_extensions`. Selecting
+extensions in the list alone does not enable those node settings. Neither
+option installs Longhorn; Longhorn integration remains untested.
+
+The role submits the combined extension list to Image Factory's `/schematics`
+API. It combines the returned schematic ID with `talos_proxmox_talos_version`
+to generate both the boot ISO URL and the installer image:
+
+```text
+https://factory.talos.dev/image/<schematic-id>/<talos-version>/metal-amd64.iso
+factory.talos.dev/metal-installer/<schematic-id>:<talos-version>
+```
+
+These are generated during configuration, not static defaults. An unavailable
+extension/version combination can fail when Image Factory builds the assets;
+acceptance of the schematic alone does not prove availability.
+
 ## Install Requirements
 
 1. Install talosctl: https://www.talos.dev/v1.11/talos-guides/install/talosctl/
@@ -268,9 +310,8 @@ settings only; the role does not install Longhorn.
 | `talos_proxmox_proxmox_vm_storage` | `nvme` | Proxmox storage target for VM disks |
 | `talos_proxmox_proxmox_storage_url` | `{{ talos_proxmox_proxmox_api_url }}/nodes/{{ talos_proxmox_proxmox_node }}/storage/{{ talos_proxmox_proxmox_storage }}` | Proxmox storage API URL (derived) |
 | `talos_proxmox_talos_version` | `v1.14.5` | Talos release version to download/install (minimum supported: `v1.14.0`) |
-| `talos_proxmox_enable_longhorn_support` | `false` | **Integration untested.** Add Longhorn prerequisites, not Longhorn itself |
-| `talos_proxmox_talos_qemu_agent_path` | `factory.talos.dev/image/...` | Path used to construct Talos ISO download URL |
-| `talos_proxmox_talos_iso_download_url` | `https://{{ talos_proxmox_talos_qemu_agent_path }}/{{ talos_proxmox_talos_version }}/metal-amd64.iso` | Talos ISO download URL (derived) |
+| `talos_proxmox_talos_extensions` | `[]` | Additional official system extensions; QEMU guest agent is always included. See [extension configuration](#official-system-extensions) |
+| `talos_proxmox_enable_longhorn_support` | `false` | **Integration untested.** Automatically include `siderolabs/iscsi-tools`, `siderolabs/util-linux-tools` and kernel/sysctl prerequisites; does not install Longhorn |
 | `talos_proxmox_talos_installation_disk_path` | `/dev/sda` | Disk device inside VM where Talos will be installed |
 | `talos_proxmox_talos_cpu_type` | `host` | CPU type to pass to Proxmox VM definition |
 | `talos_proxmox_cluster_name` | `kube.example.com` | Cluster name used in Talos configs |

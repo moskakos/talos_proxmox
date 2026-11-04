@@ -37,6 +37,22 @@
   when: talos_proxmox_install_cilium
   register: talos_proxmox_cilium_manifest
 
+- name: Validate Talos extension list
+  ansible.builtin.assert:
+    that:
+      - talos_proxmox_talos_extensions | type_debug == 'list'
+    fail_msg: "Set talos_proxmox_talos_extensions to a list of official extension names, or [] for no additional extensions."
+    quiet: true
+
+- name: Validate Talos extension names
+  ansible.builtin.assert:
+    that:
+      - item is string
+      - item is match('^siderolabs/[a-z0-9][a-z0-9-]*$')
+    fail_msg: "Use official Image Factory extension names such as siderolabs/iscsi-tools, without image tags or digests."
+    quiet: true
+  loop: "{{ talos_proxmox_talos_extensions }}"
+
 - name: Create Talos ISO customization file
   ansible.builtin.template:
     src: talos_iso_customizations.yaml.j2
