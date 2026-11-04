@@ -93,7 +93,7 @@ acceptance of the schematic alone does not prove availability.
 
 ## Install Requirements
 
-1. Install talosctl: https://www.talos.dev/v1.11/talos-guides/install/talosctl/
+1. Install talosctl: https://docs.siderolabs.com/talos/v1.14/getting-started/talosctl
 2. Install python dependencies:
 
    ```bash
