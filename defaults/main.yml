@@ -18,7 +18,7 @@ talos_proxmox_proxmox_storage: "truenas-01-isos"
 talos_proxmox_proxmox_vm_storage: "nvme"
 talos_proxmox_proxmox_storage_url: "{{ talos_proxmox_proxmox_api_url }}/nodes/{{ talos_proxmox_proxmox_node }}/storage/{{ talos_proxmox_proxmox_storage }}"
 
-talos_proxmox_talos_version: "v1.14.2"
+talos_proxmox_talos_version: "v1.14.5"
 # The talos image will always use the qemu-guest-agent extension
 # Below you can enable additional extensions if needed
 # Enables support for Longhorn in the Talos ISO (iscsi-tools and util-linux-tools)
