@@ -34,7 +34,7 @@ talos_proxmox_cluster_shared_ip: 192.168.1.20
 talos_proxmox_mgmt_network: "192.168.1.0/24"
 talos_proxmox_mgmt_gateway: "192.168.1.254"
 
-# Enable VLAN configuration (activates Multus as well as VLAN interfaces on Proxmox VMs) if set to false the VM interfaces will be configured as access ports
+# Enable VLAN interfaces on Talos nodes and select them as Cilium devices. If false, VM interfaces use access ports.
 talos_proxmox_enable_vlans: false
 # Set this to false if the vms interface should not have any vlan tag. It must be set if talos_proxmox_enable_vlans is true.
 # If talos_proxmox_enable_vlans is true the talos_proxmox_mgmt_vlan_id is used for a mgmt subinterface inside the vm,

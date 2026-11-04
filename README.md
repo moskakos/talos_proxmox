@@ -6,7 +6,7 @@ This Ansible role automates the provisioning and configuration of a Talos-based 
 
 - Automated VM provisioning on Proxmox
 - Talos OS configuration and bootstrapping
-- Multus CNI installation and VLAN network setup (optional)
+- Cilium CNI installation and VLAN network setup (optional)
 - Configuration of static kubernetes resources (for example secrets)
 - ArgoCD installation and app-of-apps deployment
 
@@ -75,7 +75,6 @@ The following sequence describes what the role does in order (if called without 
 - Create VMs in proxmox
 - Install Talos on the VMs by applying the talos configuration; switch to trunk if vlans are enabled
 - Bootstrap the talos cluster, wait for the cluster to be ready and get the kube config
-- Install Multus into the cluster if talos_proxmox_enable_vlans is true
 - Create all k8s resources defined in "talos_proxmox_static_resources"
 - Install argocd if enabled and configure the repository and application
 - Cleanup temporary files
@@ -154,7 +153,6 @@ You can target specific steps or do other tasks by calling the role with specifi
    - `create_vms`: Create VMs in proxmox
   - `install_talos`: Install Talos on the VMs by applying the talos configuration
   - `bootstrap_cluster`: Bootstrap the talos cluster
-   - `install_multus`: Install Multus into the cluster if talos_proxmox_enable_vlans is true
    - `deploy_static_resources`: Create all k8s resources defined in "talos_proxmox_static_resources"
    - `install_argocd`: Install argocd if enabled
    - `cleanup`: Do cleanup tasks after the installation
@@ -188,7 +186,7 @@ talos_proxmox_mgmt_vlan_id: 99
 
 This is the default setup. 
 This will start during the installation with an access port on the provided mgmt vlan and will switch to a trunk port during talos installation.
-This will also install multus so pods can get an additional interface in a specific vlan via network attachment definitions.
+This configures VLAN interfaces on the Talos nodes and selects them as Cilium devices. It does not add extra network interfaces to pods.
 
 ```yaml
 # Set talos_proxmox_enable_vlans to true for a trunk port
@@ -262,13 +260,13 @@ The following table lists role variables (from `defaults/main.yml`), their defau
 | `talos_proxmox_cluster_shared_ip` | `192.168.100.10` | Shared/virtual IP for control-plane services |
 | `talos_proxmox_mgmt_network` | `192.168.100.0/24` | Management network CIDR for Talos machine configs |
 | `talos_proxmox_mgmt_gateway` | `192.168.100.1` | Default gateway for management network |
-| `talos_proxmox_enable_vlans` | `true` | Enable VLAN-aware VM/network configuration and Multus |
+| `talos_proxmox_enable_vlans` | `true` | Enable VLAN-aware VM/network configuration (requires Cilium) |
 | `talos_proxmox_mgmt_vlan_id` | `100` | VLAN ID used for management sub-interface when VLANs enabled |
 | `talos_proxmox_k8s_vmbr` | `vmbr0` | Proxmox bridge used for VM network interfaces |
 | `talos_proxmox_masters` | See file | List of master VM definitions (name, ip, cores, memory, disk) |
 | `talos_proxmox_workers` | See file | List of worker VM definitions (may include `storage_disk`) |
 | `talos_proxmox_schedule_on_masters` | `true` if no workers, else `false` | Allow workloads on master nodes (removes the control-plane taint and load balancer exclusion label) |
-| `talos_proxmox_vlan_config` | See file | List of VLAN definitions used to create Multus NADs |
+| `talos_proxmox_vlan_config` | See file | Additional VLAN definitions for Talos node interfaces and Cilium devices |
 | `talos_proxmox_nameservers` | `[1.1.1.1, 8.8.8.8]` | DNS servers rendered into Talos configs |
 | `talos_proxmox_search_domains` | `[]` | Search domains rendered into `ResolverConfig` (empty means not set) |
 | `talos_proxmox_host_dns` | `{}` | Optional `hostDNS` settings rendered into `ResolverConfig` (empty means not set) |

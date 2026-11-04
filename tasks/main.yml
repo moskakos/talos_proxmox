@@ -24,11 +24,6 @@
   import_tasks: bootstrap_cluster.yml
   tags: [bootstrap_cluster]
 
-# - name: Install and configure Multus CNI
-#   import_tasks: install_multus.yml
-#   tags: [install_multus]
-#   when: talos_proxmox_enable_vlans
-
 - name: Deploy static resources
   import_tasks: deploy_static_resources.yml
   tags: [deploy_static_resources]
