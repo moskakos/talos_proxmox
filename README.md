@@ -20,6 +20,7 @@ This Ansible role automates the provisioning and configuration of a Talos-based 
 - Python >= 3.9 on the control host
 - Python packages: `requests`, `kubernetes>=24.2.0`, `PyYAML>=3.11`, `jsonpatch`, `proxmoxer`, `jmespath`
 - CLI binaries on the control host: `talosctl`
+- Helm on the control host when `talos_proxmox_install_cilium` is enabled (used to render Cilium manifests)
 - Proxmox server with API access and the corresponding API key
 - Proxmox storage name used in the role (defaults to `local`) must exist
 
