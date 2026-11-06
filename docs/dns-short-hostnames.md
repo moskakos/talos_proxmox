@@ -6,9 +6,9 @@ and host DNS options.
 
 | Variable | Default | Purpose |
 |---|---|---|
-| `talos_proxmox_nameservers` | `[1.1.1.1, 8.8.8.8]` | DNS servers |
-| `talos_proxmox_search_domains` | `[]` | Search domains (`searchDomains.domains`) |
-| `talos_proxmox_host_dns` | `{}` | `hostDNS` settings, rendered as is |
+| `talos_proxmox_nameservers` | `[192.168.1.1, 192.168.1.2]` | DNS servers |
+| `talos_proxmox_search_domains` | `[example.com, internal.example.com]` | Search domains (`searchDomains.domains`) |
+| `talos_proxmox_host_dns` | `{enabled: true, forwardKubeDNSToHost: true, resolveMemberNames: true}` | `hostDNS` settings, rendered as is |
 
 Empty search domains and host DNS settings are not rendered. An empty
 nameserver list does not remove existing nameservers.
