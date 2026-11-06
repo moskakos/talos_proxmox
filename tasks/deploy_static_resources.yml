@@ -1,14 +1,7 @@
 ---
 
-- name: Require the bootstrapped cluster connection for static resources
-  ansible.builtin.assert:
-    that:
-      - talos_proxmox_cluster_kubeconfig_path is defined
-      - talos_proxmox_cluster_kubeconfig_context is defined
-      - talos_proxmox_cluster_kubeconfig_context is string
-      - talos_proxmox_cluster_kubeconfig_context | length > 0
-    fail_msg: "Bootstrap the cluster in the same role execution before deploying static resources."
-    quiet: true
+- name: Verify the Kubernetes connection before deploying static resources
+  import_tasks: validate_kubernetes_connection.yml
   when: talos_proxmox_static_resources | length > 0
 
 - name: Apply static resources

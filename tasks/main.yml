@@ -1,9 +1,13 @@
 ---
 # Main task file for talos_proxmox role
 
-- name: Protect existing client configuration
+- name: Prepare Kubernetes client connection settings
+  import_tasks: prepare_kubernetes_connection.yml
+  tags: [bootstrap_cluster, deploy_static_resources]
+
+- name: Protect existing client configuration before bootstrap
   import_tasks: check_client_config.yml
-  tags: [always]
+  tags: [bootstrap_cluster]
 
 - name: Validate minimum supported Talos version
   ansible.builtin.assert:

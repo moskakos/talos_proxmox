@@ -52,24 +52,8 @@
           - "{{ talos_proxmox_cluster_shared_ip }}"
           - --merge=false
 
-- name: Read the generated cluster kubeconfig
-  ansible.builtin.slurp:
-    src: "{{ talos_proxmox_cluster_kubeconfig_path }}"
-  register: talos_proxmox_cluster_kubeconfig_file
-  no_log: true
-
-- name: Select the generated cluster context
-  ansible.builtin.set_fact:
-    talos_proxmox_cluster_kubeconfig_context: "{{ (talos_proxmox_cluster_kubeconfig_file.content | b64decode | from_yaml)['current-context'] | default('') }}"
-  no_log: true
-
-- name: Validate the generated cluster context
-  ansible.builtin.assert:
-    that:
-      - talos_proxmox_cluster_kubeconfig_context is string
-      - talos_proxmox_cluster_kubeconfig_context | length > 0
-    fail_msg: "The generated cluster kubeconfig must contain a non-empty current-context."
-    quiet: true
+- name: Verify the bootstrapped Kubernetes connection
+  import_tasks: validate_kubernetes_connection.yml
 
 - name: Ensure all kubernetes nodes are ready
   kubernetes.core.k8s_info:

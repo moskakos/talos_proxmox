@@ -135,7 +135,8 @@ The following sequence describes what the role does in order (if called without 
 - Create all k8s resources defined in "talos_proxmox_static_resources"
 - Cleanup temporary files
 
-The check runs before all role tasks, including when using tags. It checks
+The protection check runs before provisioning in an untagged installation and
+when selecting `bootstrap_cluster`, but not for other tag-only runs. It checks
 `~/.talos/config`, `~/.kube/config`, and the target selected by `KUBECONFIG`,
 on the host where the role runs. The role stops if any of these files exists:
 bootstrap requires new Talos and Kubernetes client configuration files.
@@ -148,10 +149,18 @@ before running the role.
 Bootstrap writes a standalone kubeconfig to the checked destination (the
 `KUBECONFIG` path, or `~/.kube/config` by default), without merging or forcing
 an overwrite. Readiness checks and static resources explicitly use this file
-and its generated context. Inherited `K8S_AUTH_*` environment settings,
+and its current context. Inherited `K8S_AUTH_*` environment settings,
 including authentication, context and proxy overrides, are ignored for these
-Kubernetes tasks so they cannot select a different cluster. Static resource
-deployment requires bootstrap in the same role execution.
+Kubernetes tasks so they cannot select a different cluster.
+
+`deploy_static_resources` can also run separately using an existing kubeconfig,
+without moving client configuration files away or repeating bootstrap. Before
+readiness checks and resource deployment, the role verifies that the kubeconfig
+current context uniquely references the configured Kubernetes API endpoint,
+`https://<talos_proxmox_cluster_name>:6443`. A missing file, invalid context or
+different endpoint stops the run. This endpoint check does not prove cluster
+ownership; use the correct kubeconfig and inventory. `cleanup` does not check
+client configuration files.
 
 ### Optional starting VMID
 

@@ -1,0 +1,73 @@
+---
+- name: Check the cluster kubeconfig is available
+  ansible.builtin.stat:
+    path: "{{ talos_proxmox_cluster_kubeconfig_path }}"
+    follow: true
+    get_checksum: false
+  register: talos_proxmox_cluster_kubeconfig_stat
+
+- name: Require an existing cluster kubeconfig file
+  ansible.builtin.assert:
+    that:
+      - talos_proxmox_cluster_kubeconfig_stat.stat.isreg | default(false)
+    fail_msg: "The cluster kubeconfig file {{ talos_proxmox_cluster_kubeconfig_path }} is missing or is not a regular file. Bootstrap the cluster first or set KUBECONFIG to its existing kubeconfig."
+    quiet: true
+
+- name: Read the cluster kubeconfig
+  ansible.builtin.slurp:
+    src: "{{ talos_proxmox_cluster_kubeconfig_path }}"
+  register: talos_proxmox_cluster_kubeconfig_file
+  no_log: true
+
+- name: Parse the cluster kubeconfig
+  block:
+    - name: Decode the cluster kubeconfig
+      ansible.builtin.set_fact:
+        talos_proxmox_cluster_kubeconfig: "{{ talos_proxmox_cluster_kubeconfig_file.content | b64decode | from_yaml }}"
+      no_log: true
+  rescue:
+    - name: Report an invalid kubeconfig
+      ansible.builtin.fail:
+        msg: "Cannot parse {{ talos_proxmox_cluster_kubeconfig_path }} as YAML. Provide a valid kubeconfig for this cluster."
+
+- name: Validate the kubeconfig structure
+  ansible.builtin.assert:
+    that:
+      - talos_proxmox_cluster_kubeconfig is mapping
+      - talos_proxmox_cluster_kubeconfig['current-context'] | default('') is string
+      - talos_proxmox_cluster_kubeconfig['current-context'] | default('') | length > 0
+      - talos_proxmox_cluster_kubeconfig.contexts | default(none) | type_debug == 'list'
+      - talos_proxmox_cluster_kubeconfig.clusters | default(none) | type_debug == 'list'
+    fail_msg: "The cluster kubeconfig must contain a non-empty current-context and lists of contexts and clusters."
+    quiet: true
+
+- name: Select the cluster kubeconfig context
+  ansible.builtin.set_fact:
+    talos_proxmox_cluster_kubeconfig_context: "{{ talos_proxmox_cluster_kubeconfig['current-context'] }}"
+    talos_proxmox_kubeconfig_context_matches: "{{ talos_proxmox_cluster_kubeconfig.contexts | selectattr('name', 'defined') | selectattr('name', 'equalto', talos_proxmox_cluster_kubeconfig['current-context']) | list }}"
+  no_log: true
+
+- name: Require a unique context with a cluster reference
+  ansible.builtin.assert:
+    that:
+      - talos_proxmox_kubeconfig_context_matches | length == 1
+      - talos_proxmox_kubeconfig_context_matches[0].context.cluster is defined
+      - talos_proxmox_kubeconfig_context_matches[0].context.cluster is string
+    fail_msg: "The kubeconfig current-context must identify exactly one context with a cluster reference."
+    quiet: true
+
+- name: Select the referenced Kubernetes cluster
+  ansible.builtin.set_fact:
+    talos_proxmox_kubeconfig_cluster_matches: "{{ talos_proxmox_cluster_kubeconfig.clusters | selectattr('name', 'defined') | selectattr('name', 'equalto', talos_proxmox_kubeconfig_context_matches[0].context.cluster) | list }}"
+  no_log: true
+
+- name: Verify the kubeconfig targets the configured Kubernetes API
+  ansible.builtin.assert:
+    that:
+      - talos_proxmox_kubeconfig_cluster_matches | length == 1
+      - talos_proxmox_kubeconfig_cluster_matches[0].cluster.server | default('') == 'https://' ~ talos_proxmox_cluster_name ~ ':6443'
+    fail_msg: >-
+      The kubeconfig current-context does not uniquely target https://{{ talos_proxmox_cluster_name }}:6443.
+      Select the correct current-context in {{ talos_proxmox_cluster_kubeconfig_path }}
+      and check talos_proxmox_cluster_name before retrying.
+    quiet: true

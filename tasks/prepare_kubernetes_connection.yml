@@ -1,0 +1,35 @@
+---
+- name: Read the execution environment
+  ansible.builtin.setup:
+    gather_subset:
+      - '!all'
+      - '!min'
+      - env
+  register: talos_proxmox_client_environment
+
+- name: Validate the KUBECONFIG environment variable
+  ansible.builtin.assert:
+    that:
+      - (talos_proxmox_client_environment.ansible_facts.ansible_env.KUBECONFIG | default('')).split(':') | length <= 1
+    fail_msg: "The role requires a single kubeconfig destination. Set KUBECONFIG to a single path or unset it before running the role."
+    quiet: true
+
+- name: Check the configured kubeconfig path
+  ansible.builtin.stat:
+    path: "{{ talos_proxmox_kubeconfig_path }}"
+    follow: true
+    get_checksum: false
+  vars:
+    talos_proxmox_kubeconfig_path: "{{ talos_proxmox_client_environment.ansible_facts.ansible_env.KUBECONFIG | default('', true) or talos_proxmox_client_environment.ansible_facts.ansible_env.HOME ~ '/.kube/config' }}"
+  register: talos_proxmox_kubeconfig_path_stat
+
+- name: Set the cluster kubeconfig destination
+  ansible.builtin.set_fact:
+    talos_proxmox_cluster_kubeconfig_path: "{{ (talos_proxmox_client_environment.ansible_facts.ansible_env.KUBECONFIG | default('', true) or talos_proxmox_client_environment.ansible_facts.ansible_env.HOME ~ '/.kube/config') ~ ('/kubeconfig' if talos_proxmox_kubeconfig_path_stat.stat.isdir | default(false) else '') }}"
+    talos_proxmox_kubernetes_environment: {}
+
+- name: Disable inherited Kubernetes authentication overrides
+  ansible.builtin.set_fact:
+    talos_proxmox_kubernetes_environment: "{{ talos_proxmox_kubernetes_environment | combine({item.key: ''}) }}"
+  loop: "{{ talos_proxmox_client_environment.ansible_facts.ansible_env | dict2items | selectattr('key', 'match', '^K8S_AUTH_') | list }}"
+  no_log: true
