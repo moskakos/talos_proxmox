@@ -15,6 +15,37 @@
     fail_msg: "Set a non-empty Proxmox API token ID and secret before downloading the Talos ISO."
     quiet: true
 
+- name: Check existing Talos ISOs in Proxmox storage
+  ansible.builtin.uri:
+    url: "{{ talos_proxmox_proxmox_storage_url }}/content"
+    method: GET
+    headers:
+      Authorization: "PVEAPIToken={{ talos_proxmox_proxmox_api_user }}!{{ talos_proxmox_proxmox_api_token_id }}={{ talos_proxmox_proxmox_api_token_secret }}"
+    validate_certs: true
+    ca_path: "{{ talos_proxmox_proxmox_ca_path | default(omit, true) }}"
+    return_content: true
+  register: talos_proxmox_existing_iso_content
+
+- name: Find the exact Talos ISO in storage
+  ansible.builtin.set_fact:
+    talos_proxmox_existing_isos: >-
+      {{ talos_proxmox_existing_iso_content.json.data
+         | selectattr('volid', 'equalto', talos_proxmox_proxmox_storage ~ ':iso/' ~ talos_proxmox_talos_iso_filename) | list }}
+
+- name: Require an unambiguous non-empty existing Talos ISO
+  ansible.builtin.assert:
+    that:
+      - talos_proxmox_existing_isos | length == 1
+      - talos_proxmox_existing_isos[0].size is defined
+      - talos_proxmox_existing_isos[0].size is number
+      - talos_proxmox_existing_isos[0].size > 0
+    fail_msg: >-
+      Existing Talos ISO {{ talos_proxmox_talos_iso_filename }} is ambiguous or has an invalid or empty size.
+      Inspect the file in Proxmox storage and remove it manually if a new download is needed.
+      The role will not delete or overwrite it.
+    quiet: true
+  when: talos_proxmox_existing_isos | length > 0
+
 - name: Download Talos ISO to Proxmox storage
   ansible.builtin.uri:
     url: "{{ talos_proxmox_proxmox_storage_url }}/download-url"
@@ -30,6 +61,7 @@
     ca_path: "{{ talos_proxmox_proxmox_ca_path | default(omit, true) }}"
     return_content: true
   register: talos_proxmox_iso_download
+  when: talos_proxmox_existing_isos | length == 0
 
 - name: Validate the Proxmox ISO download task ID
   ansible.builtin.assert:
@@ -39,6 +71,7 @@
       - talos_proxmox_iso_download.json.data is match('^UPID:')
     fail_msg: "Proxmox did not return a valid UPID for the Talos ISO download."
     quiet: true
+  when: talos_proxmox_existing_isos | length == 0
 
 - name: Wait for the Proxmox ISO download task to finish
   ansible.builtin.uri:
@@ -53,6 +86,7 @@
   until: talos_proxmox_iso_download_status is failed or (talos_proxmox_iso_download_status.json.data.status | default('')) == 'stopped'
   retries: 100
   delay: 6
+  when: talos_proxmox_existing_isos | length == 0
 
 - name: Verify the Proxmox ISO download succeeded
   ansible.builtin.assert:
@@ -63,6 +97,7 @@
       {{ talos_proxmox_iso_download_status.json.data.exitstatus | default('No exit status returned') }}.
       Check the task log in Proxmox before retrying.
     quiet: true
+  when: talos_proxmox_existing_isos | length == 0
 
 - name: Get the completed ISO from Proxmox storage
   ansible.builtin.uri:
@@ -82,7 +117,7 @@
       - talos_proxmox_matching_isos[0].size is defined
       - talos_proxmox_matching_isos[0].size is number
       - talos_proxmox_matching_isos[0].size > 0
-    fail_msg: "The downloaded Talos ISO {{ talos_proxmox_talos_iso_filename }} is missing or has an invalid or empty size in Proxmox storage."
+    fail_msg: "Talos ISO {{ talos_proxmox_talos_iso_filename }} is missing or has an invalid or empty size in Proxmox storage."
     quiet: true
   vars:
     talos_proxmox_matching_isos: >-

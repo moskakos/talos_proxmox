@@ -108,9 +108,13 @@ extension/version combination can fail when Image Factory builds the assets;
 acceptance of the schematic alone does not prove availability.
 
 The Proxmox ISO filename includes both the Talos version and schematic ID:
-`talos-<talos-version>-<schematic-id>-amd64.iso`. Each provisioning run downloads
-the ISO and waits up to approximately ten minutes for the returned Proxmox task
-to finish with `OK`. Before creating VMs, the role checks that the exact ISO
+`talos-<talos-version>-<schematic-id>-amd64.iso`. Provisioning reuses an existing
+ISO with this exact name if there is exactly one match with a positive size.
+An ambiguous match or invalid or empty size stops the run without deleting or
+overwriting the file; inspect it in Proxmox and remove it manually if necessary.
+If the ISO is absent, the role downloads it and waits up to approximately ten
+minutes for the returned Proxmox task to finish with `OK`.
+Before creating VMs, the role checks again that the exact ISO
 exists in storage and has a positive size. Download errors, timeouts and missing
 or empty files stop the run. The size check is not a checksum or a guarantee of
 file integrity.
