@@ -1,7 +1,20 @@
 ---
 
+- name: Require the bootstrapped cluster connection for static resources
+  ansible.builtin.assert:
+    that:
+      - talos_proxmox_cluster_kubeconfig_path is defined
+      - talos_proxmox_cluster_kubeconfig_context is defined
+      - talos_proxmox_cluster_kubeconfig_context is string
+      - talos_proxmox_cluster_kubeconfig_context | length > 0
+    fail_msg: "Bootstrap the cluster in the same role execution before deploying static resources."
+    quiet: true
+  when: talos_proxmox_static_resources | length > 0
+
 - name: Apply static resources
   kubernetes.core.k8s:
+    kubeconfig: "{{ talos_proxmox_cluster_kubeconfig_path }}"
+    context: "{{ talos_proxmox_cluster_kubeconfig_context }}"
     state: "{{ item.state | default('present', true) }}"
     name: "{{ item.name | default(omit, true) }}"
     definition: "{{ item.definition | default(omit, true) }}"
@@ -13,6 +26,7 @@
     wait_timeout: "{{ item.wait_timeout | default(omit, true) }}"
     wait_sleep: "{{ item.wait_sleep | default(omit, true) }}"
     force: "{{ item.force | default(omit, true) }}"
+  environment: "{{ talos_proxmox_kubernetes_environment }}"
   loop: "{{ talos_proxmox_static_resources }}"
   loop_control:
     label: "{{ item.definition.metadata.name if item.definition is defined else item.name | default('kubernetes resource', true) }}"

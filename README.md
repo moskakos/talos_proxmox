@@ -130,12 +130,20 @@ The following sequence describes what the role does in order (if called without 
 The check runs before all role tasks, including when using tags. It checks
 `~/.talos/config`, `~/.kube/config`, and the target selected by `KUBECONFIG`,
 on the host where the role runs. The role stops if any of these files exists:
-bootstrap overwrites the Talos configuration and can modify an existing
-Kubernetes configuration. Back up and move the existing files to a safe
+bootstrap requires new Talos and Kubernetes client configuration files.
+Back up and move the existing files to a safe
 location before running the role. Preserve both the old and newly generated
-configurations when restoring access to other clusters. `talosctl` does not
-support merging into multiple `KUBECONFIG` paths; set a single path or unset
-the variable before running the role.
+configurations when restoring access to other clusters. Only a single
+`KUBECONFIG` destination is supported; set a single path or unset the variable
+before running the role.
+
+Bootstrap writes a standalone kubeconfig to the checked destination (the
+`KUBECONFIG` path, or `~/.kube/config` by default), without merging or forcing
+an overwrite. Readiness checks and static resources explicitly use this file
+and its generated context. Inherited `K8S_AUTH_*` environment settings,
+including authentication, context and proxy overrides, are ignored for these
+Kubernetes tasks so they cannot select a different cluster. Static resource
+deployment requires bootstrap in the same role execution.
 
 ### Optional starting VMID
 

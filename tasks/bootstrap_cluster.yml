@@ -43,11 +43,40 @@
         timeout: 500
 
     - name: Get kubeconfig from the cluster
-      ansible.builtin.command: talosctl kubeconfig --nodes {{ talos_proxmox_cluster_shared_ip }} --force
+      ansible.builtin.command:
+        argv:
+          - talosctl
+          - kubeconfig
+          - "{{ talos_proxmox_cluster_kubeconfig_path }}"
+          - --nodes
+          - "{{ talos_proxmox_cluster_shared_ip }}"
+          - --merge=false
+
+- name: Read the generated cluster kubeconfig
+  ansible.builtin.slurp:
+    src: "{{ talos_proxmox_cluster_kubeconfig_path }}"
+  register: talos_proxmox_cluster_kubeconfig_file
+  no_log: true
+
+- name: Select the generated cluster context
+  ansible.builtin.set_fact:
+    talos_proxmox_cluster_kubeconfig_context: "{{ (talos_proxmox_cluster_kubeconfig_file.content | b64decode | from_yaml)['current-context'] | default('') }}"
+  no_log: true
+
+- name: Validate the generated cluster context
+  ansible.builtin.assert:
+    that:
+      - talos_proxmox_cluster_kubeconfig_context is string
+      - talos_proxmox_cluster_kubeconfig_context | length > 0
+    fail_msg: "The generated cluster kubeconfig must contain a non-empty current-context."
+    quiet: true
 
 - name: Ensure all kubernetes nodes are ready
   kubernetes.core.k8s_info:
+    kubeconfig: "{{ talos_proxmox_cluster_kubeconfig_path }}"
+    context: "{{ talos_proxmox_cluster_kubeconfig_context }}"
     kind: Node
+  environment: "{{ talos_proxmox_kubernetes_environment }}"
   register: talos_proxmox_k8s_nodes
   until:
     - talos_proxmox_k8s_nodes | json_query('resources[*].status.conditions[?type==`Ready`].status') | unique == [["True"]]
