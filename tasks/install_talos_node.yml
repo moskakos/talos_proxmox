@@ -1,6 +1,16 @@
 ---
 # Loop file to install Talos on a single node
 
+- name: Wait for the Talos API port on {{ item.name }}
+  ansible.builtin.wait_for:
+    host: "{{ talos_proxmox_talos_node_ips[item.name] }}"
+    port: 50000
+    state: started
+    timeout: 300
+    sleep: 10
+    connect_timeout: 3
+    msg: "Talos API port {{ talos_proxmox_talos_node_ips[item.name] }}:50000 for {{ item.name }} did not become reachable within 300 seconds."
+
 - name: Create Talos node patch for {{ item.name }}
   ansible.builtin.command:
     argv:

@@ -67,6 +67,17 @@ The role always includes `siderolabs/qemu-guest-agent`, even when the list is
 empty. Proxmox uses the guest agent to discover VM IP addresses before applying
 the Talos configuration. Duplicate extensions are included only once.
 
+During installation, the role polls each VM's guest-agent network information
+every 10 seconds, with up to 30 retries (about five minutes, plus API request
+time). It requires one unique IPv4 address after excluding loopback and
+link-local addresses; multiple addresses stop installation rather than selecting
+one arbitrarily. This is the ISO's DHCP address, not necessarily the node's
+configured static address. Proxmox API failures stop discovery immediately.
+Before sending each machine configuration, the role also waits up to 300 seconds
+for TCP port `50000` from the host running `talosctl`. An open port confirms
+connectivity, not API readiness or node identity. Configuration submission is
+not automatically retried.
+
 Longhorn requires `siderolabs/iscsi-tools` and `siderolabs/util-linux-tools`:
 
 ```yaml

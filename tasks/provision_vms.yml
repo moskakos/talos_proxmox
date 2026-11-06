@@ -146,8 +146,3 @@
   loop_control:
     index_var: talos_proxmox_vm_index
     label: "{{ item.name }}"
-
-- name: Wait for the VMs to be fully started
-  ansible.builtin.wait_for:
-    timeout: 60
-  delegate_to: localhost

@@ -1,0 +1,53 @@
+---
+- name: Discover the installation address for {{ talos_proxmox_discovery_node.name }}
+  vars:
+    talos_proxmox_discovered_vms: "{{ talos_proxmox_vm_info.proxmox_vms | default([]) }}"
+    talos_proxmox_net_entries: "{{ talos_proxmox_discovered_vms | selectattr('network', 'defined') | map(attribute='network') | sum(start=[]) }}"
+    talos_proxmox_all_ips: "{{ talos_proxmox_net_entries | selectattr('ip-addresses', 'defined') | map(attribute='ip-addresses') | sum(start=[]) }}"
+    talos_proxmox_ipv4s: "{{ talos_proxmox_all_ips | selectattr('ip-address-type', 'equalto', 'ipv4') | map(attribute='ip-address') | reject('match', '^127\\.') | reject('match', '^169\\.254\\.') | unique | list }}"
+  block:
+    - name: Wait for guest-agent IPv4 information for {{ talos_proxmox_discovery_node.name }}
+      block:
+        - name: Get Talos VM network information
+          community.proxmox.proxmox_vm_info:
+            ca_path: "{{ talos_proxmox_proxmox_ca_path | default(omit, true) }}"
+            api_user: "{{ talos_proxmox_proxmox_api_user }}"
+            api_host: "{{ talos_proxmox_proxmox_server }}"
+            api_port: "{{ talos_proxmox_proxmox_port }}"
+            api_token_id: "{{ talos_proxmox_proxmox_api_token_id }}"
+            api_token_secret: "{{ talos_proxmox_proxmox_api_token_secret }}"
+            node: "{{ talos_proxmox_proxmox_node }}"
+            name: "{{ talos_proxmox_discovery_node.name }}"
+            type: qemu
+            config: current
+            network: true
+          register: talos_proxmox_vm_info
+          until: >-
+            talos_proxmox_vm_info is failed or
+            talos_proxmox_discovered_vms | length != 1 or
+            talos_proxmox_ipv4s | length > 0
+          retries: 30
+          delay: 10
+      rescue:
+        - name: Report Talos IP discovery failure
+          ansible.builtin.fail:
+            msg: >-
+              Could not discover an installation IPv4 address for {{ talos_proxmox_discovery_node.name }}.
+              Found addresses: {{ talos_proxmox_all_ips }}.
+              Check the Proxmox guest agent and DHCP network.
+              Details: {{ ansible_failed_result.msg | default('No usable IPv4 address appeared within 30 retries at 10-second intervals.') }}
+
+    - name: Require one VM and one unique installation IPv4 address
+      ansible.builtin.assert:
+        that:
+          - talos_proxmox_discovered_vms | length == 1
+          - talos_proxmox_ipv4s | length == 1
+        fail_msg: >-
+          Expected one VM and one unique installation IPv4 address for {{ talos_proxmox_discovery_node.name }};
+          found {{ talos_proxmox_discovered_vms | length }} VMs and addresses {{ talos_proxmox_all_ips }}.
+          Usable IPv4 addresses: {{ talos_proxmox_ipv4s }}. Refusing to guess an address.
+        quiet: true
+
+    - name: Store the installation IPv4 address
+      ansible.builtin.set_fact:
+        talos_proxmox_talos_node_ips: "{{ talos_proxmox_talos_node_ips | default({}) | combine({talos_proxmox_discovery_node.name: talos_proxmox_ipv4s[0]}) }}"
