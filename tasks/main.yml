@@ -1,6 +1,10 @@
 ---
 # Main task file for talos_proxmox role
 
+- name: Check cluster API name resolution before installation
+  ansible.builtin.import_tasks: check_cluster_dns.yml
+  tags: [configure_talos, create_vms, install_talos, bootstrap_cluster, deploy_static_resources]
+
 - name: Prepare persistent Talos configuration paths
   ansible.builtin.import_tasks: prepare_talos_workspace.yml
   tags: [configure_talos, install_talos, bootstrap_cluster]

@@ -145,6 +145,16 @@ The following sequence describes what the role does in order (if called without 
 - Bootstrap the talos cluster, wait for the cluster to be ready and get the kube config
 - Create all k8s resources defined in "talos_proxmox_static_resources"
 
+Before these steps, the role checks that `talos_proxmox_cluster_name` resolves
+on the execution host using its normal system resolver (including hosts-file
+entries). This also runs for the `configure_talos`, `create_vms`, `install_talos`,
+`bootstrap_cluster` and `deploy_static_resources` tags, including check mode.
+Resolution failure stops the run before VM creation. IP literals and empty
+strings skip DNS resolution; other validation still requires a valid cluster
+name. The result need not equal the cluster VIP, allowing a load-balancer
+endpoint. This check does not query Talos nodes' configured DNS servers or
+require an already running API.
+
 The protection check runs before provisioning in an untagged installation and
 when selecting `bootstrap_cluster`, but not for other tag-only runs. It checks
 `~/.talos/config`, `~/.kube/config`, and the target selected by `KUBECONFIG`,

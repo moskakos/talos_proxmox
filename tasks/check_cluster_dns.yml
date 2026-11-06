@@ -1,0 +1,36 @@
+---
+- name: Check cluster API name resolution on the execution host
+  when: talos_proxmox_cluster_name | length > 0
+  block:
+    - name: Discover the execution host Python interpreter
+      ansible.builtin.setup:
+        gather_subset:
+          - "!all"
+          - "!min"
+          - python
+      register: talos_proxmox_dns_python
+
+    - name: Require a resolvable cluster API name
+      ansible.builtin.command:
+        argv:
+          - "{{ talos_proxmox_dns_python.ansible_facts.ansible_python.executable }}"
+          - -c
+          - |
+            import ipaddress
+            import socket
+            import sys
+
+            name = sys.argv[1]
+            try:
+                ipaddress.ip_address(name)
+            except ValueError:
+                try:
+                    socket.getaddrinfo(name, 6443, type=socket.SOCK_STREAM)
+                except socket.gaierror as error:
+                    sys.exit(
+                        f"Cannot resolve cluster API name {name!r} on the execution host: {error}. "
+                        "Create a DNS or hosts entry before running the role."
+                    )
+          - "{{ talos_proxmox_cluster_name }}"
+      changed_when: false
+      check_mode: false
