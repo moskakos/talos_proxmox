@@ -309,6 +309,22 @@ talos_proxmox_workers:
     storage_disk_encryption_key: "my-secret-key" # Define an encryption key
 ```
 
+### Static resource templates
+
+Each `talos_proxmox_static_resources` item must specify exactly one source:
+an inline `definition` dictionary or a `src` file. Set the boolean
+`template: true` to render a `src` file as Jinja2 before applying it:
+
+```yaml
+talos_proxmox_static_resources:
+  - src: manifests/example.yaml.j2
+    template: true
+```
+
+Templates must be available on the Ansible controller. With `template: false`
+or without the field, `src` is applied as an ordinary YAML file. Inline
+`definition` dictionaries continue to work without a file.
+
 ## Variables
 
 ### Proxmox certificate authority

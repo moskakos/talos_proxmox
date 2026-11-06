@@ -1,5 +1,25 @@
 ---
 
+- name: Validate static resource list
+  ansible.builtin.assert:
+    that:
+      - talos_proxmox_static_resources | type_debug == 'list'
+    fail_msg: "Set talos_proxmox_static_resources to a list of resource definitions or file sources."
+    quiet: true
+
+- name: Validate static resource sources
+  ansible.builtin.assert:
+    that:
+      - item is mapping
+      - (item.definition is defined) != (item.src is defined)
+      - item.template | default(false) is boolean
+      - item.definition is not defined or item.definition is mapping
+      - item.src is not defined or (item.src is string and item.src | trim | length > 0)
+      - not (item.template | default(false)) or item.src is defined
+    fail_msg: "Each static resource must specify exactly one of definition (a dictionary) or src (a non-empty path). template must be a boolean and template: true requires src."
+    quiet: true
+  loop: "{{ talos_proxmox_static_resources }}"
+
 - name: Verify the Kubernetes connection before deploying static resources
   import_tasks: validate_kubernetes_connection.yml
   when: talos_proxmox_static_resources | length > 0
@@ -11,8 +31,8 @@
     state: "{{ item.state | default('present', true) }}"
     name: "{{ item.name | default(omit, true) }}"
     definition: "{{ item.definition | default(omit, true) }}"
-    src: "{{ item.src | default(omit, true) }}"
-    template: "{{ item.template | default(omit, true) }}"
+    src: "{{ item.src if item.src is defined and not (item.template | default(false)) else omit }}"
+    template: "{{ item.src if item.template | default(false) else omit }}"
     namespace: "{{ item.namespace | default(omit, true) }}"
     wait: "{{ item.wait | default(omit, true) }}"
     wait_condition: "{{ item.wait_condition | default(omit, true) }}"
@@ -22,4 +42,4 @@
   environment: "{{ talos_proxmox_kubernetes_environment }}"
   loop: "{{ talos_proxmox_static_resources }}"
   loop_control:
-    label: "{{ item.definition.metadata.name if item.definition is defined else item.name | default('kubernetes resource', true) }}"
+    label: "{{ item.definition.metadata.name | default('kubernetes resource', true) if item.definition is defined else item.name | default('kubernetes resource', true) }}"

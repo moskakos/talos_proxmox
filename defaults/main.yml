@@ -155,8 +155,8 @@ talos_proxmox_disable_ipv6: "{{ talos_proxmox_enable_vlans | ternary(false, true
 # The static resources are applied in order using the kubernetes.core.k8s module
 # The following keywords are supported for each item in the list:
 #   - definition: A full kubernetes resource definition as a dictionary
-#   - src: A path to a yaml file containing one or more kubernetes resource
-#   - template: If true the src file will be processed as a jinja2 template before applying
+#   - src: A path to a YAML file containing one or more Kubernetes resources; use either src or definition
+#   - template: Boolean, default false. If true, src is a Jinja2 template on the Ansible controller
 #   - name: A name for the resource (overwritten by definition or src metadata.name if present)
 #   - namespace: The namespace to apply the resource to (if not defined in the resource)
 #   - wait: If true the task will wait for the resource to be ready (default: false)
