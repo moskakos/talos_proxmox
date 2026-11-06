@@ -18,6 +18,10 @@ talos_proxmox_proxmox_storage: "truenas-01-isos"
 talos_proxmox_proxmox_vm_storage: "nvme"
 talos_proxmox_proxmox_storage_url: "{{ talos_proxmox_proxmox_api_url }}/nodes/{{ talos_proxmox_proxmox_node }}/storage/{{ talos_proxmox_proxmox_storage }}"
 
+# Optional first VMID; assigns consecutive IDs to masters, then workers.
+# null lets Proxmox choose the next available ID for each VM.
+talos_proxmox_vmid_starting_number: null
+
 talos_proxmox_talos_version: "v1.14.5"
 # Additional official extensions: https://github.com/siderolabs/extensions#extension-catalog
 # qemu-guest-agent is always included; Proxmox uses it to discover VM IP addresses.

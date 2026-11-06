@@ -1,6 +1,10 @@
 ---
 # Provision VMs on Proxmox for masters and workers
 
+- name: Validate and check requested VM IDs
+  import_tasks: validate_vmids.yml
+  when: talos_proxmox_vmid_starting_number is not none
+
 - name: Download Talos ISO to Proxmox storage
   ansible.builtin.uri:
     url: "{{ talos_proxmox_proxmox_storage_url }}/download-url"
@@ -41,6 +45,7 @@
     api_token_secret: "{{ talos_proxmox_proxmox_api_token_secret }}"
     node: "{{ talos_proxmox_proxmox_node }}"
     name: "{{ item.name }}"
+    vmid: "{{ (talos_proxmox_vmid_starting_number + talos_proxmox_vm_index) if talos_proxmox_vmid_starting_number is not none else omit }}"
     cores: "{{ item.cores }}"
     memory: "{{ item.memory }}"
     cpu: "{{ talos_proxmox_talos_cpu_type}}"
@@ -62,7 +67,12 @@
       ide2: "{{ talos_proxmox_proxmox_storage }}:iso/talos-{{ talos_proxmox_talos_version }}-amd64.iso,media=cdrom"
   loop: "{{ talos_proxmox_masters + talos_proxmox_workers }}"
   loop_control:
+    index_var: talos_proxmox_vm_index
     label: "{{ item.name }}"
+
+- name: Recheck VM identities before starting
+  import_tasks: validate_vmids.yml
+  when: talos_proxmox_vmid_starting_number is not none
 
 - name: Start talos VMs
   community.proxmox.proxmox_kvm:
@@ -74,6 +84,7 @@
     api_token_secret: "{{ talos_proxmox_proxmox_api_token_secret }}"
     node: "{{ talos_proxmox_proxmox_node }}"
     name: "{{ item.name }}"
+    vmid: "{{ (talos_proxmox_vmid_starting_number + talos_proxmox_vm_index) if talos_proxmox_vmid_starting_number is not none else omit }}"
     state: started
   register: talos_proxmox_vm_start
   until: talos_proxmox_vm_start is succeeded
@@ -81,6 +92,7 @@
   delay: 3
   loop: "{{ talos_proxmox_masters + talos_proxmox_workers }}"
   loop_control:
+    index_var: talos_proxmox_vm_index
     label: "{{ item.name }}"
 
 - name: Wait for the VMs to be fully started

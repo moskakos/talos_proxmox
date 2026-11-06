@@ -1,0 +1,21 @@
+---
+- name: Check each requested VMID and name
+  ansible.builtin.assert:
+    that:
+      - talos_proxmox_id_matches | length == 0 or (talos_proxmox_id_matches | length == 1 and talos_proxmox_matching_guests | length == 1)
+      - talos_proxmox_name_matches | length == 0 or (talos_proxmox_name_matches | length == 1 and talos_proxmox_matching_guests | length == 1)
+      - talos_proxmox_matching_guests | selectattr('template', 'defined') | selectattr('template', 'truthy') | list | length == 0
+    fail_msg: >-
+      Cannot assign VMID {{ talos_proxmox_expected_vmid }} to {{ item.name }}:
+      the ID or name belongs to a different guest, node, or guest type.
+      Check Proxmox and the order of talos_proxmox_masters and talos_proxmox_workers.
+    quiet: true
+  vars:
+    talos_proxmox_expected_vmid: "{{ talos_proxmox_vmid_starting_number + talos_proxmox_vm_index }}"
+    talos_proxmox_id_matches: "{{ talos_proxmox_existing_guests.proxmox_vms | selectattr('vmid', 'equalto', talos_proxmox_expected_vmid) | list }}"
+    talos_proxmox_name_matches: "{{ talos_proxmox_existing_guests.proxmox_vms | selectattr('name', 'defined') | selectattr('name', 'equalto', item.name) | list }}"
+    talos_proxmox_matching_guests: "{{ talos_proxmox_id_matches | selectattr('name', 'defined') | selectattr('name', 'equalto', item.name) | selectattr('node', 'equalto', talos_proxmox_proxmox_node) | selectattr('type', 'equalto', 'qemu') | list }}"
+  loop: "{{ talos_proxmox_masters + talos_proxmox_workers }}"
+  loop_control:
+    index_var: talos_proxmox_vm_index
+    label: "{{ item.name }}"

@@ -2,6 +2,9 @@
 
 This Ansible role automates the provisioning and configuration of a Talos-based Kubernetes cluster on Proxmox.
 
+The role is intended for provisioning a new cluster. Adding nodes to an
+existing cluster is not supported.
+
 ## Features
 
 - Automated VM provisioning on Proxmox
@@ -23,6 +26,8 @@ This Ansible role automates the provisioning and configuration of a Talos-based 
 - Helm on the control host when `talos_proxmox_install_cilium` is enabled (used to render Cilium manifests)
 - Proxmox server with API access and the corresponding API key
 - Proxmox storage names used in the role (defaults to `truenas-01-isos` for ISOs and `nvme` for VM disks) must exist
+- When specifying a starting VMID, the Proxmox API token needs permission to
+  list all VMs and containers across the cluster to detect ID and name conflicts
 
 ## Talos Versions
 
@@ -131,6 +136,24 @@ location before running the role. Preserve both the old and newly generated
 configurations when restoring access to other clusters. `talosctl` does not
 support merging into multiple `KUBECONFIG` paths; set a single path or unset
 the variable before running the role.
+
+### Optional starting VMID
+
+Set `talos_proxmox_vmid_starting_number` to an integer between 100 and
+999999999 to assign consecutive VMIDs, first to masters in inventory order,
+then to workers. The entire assigned range must fit within those limits. For
+example, a starting value of `200` with three masters and two workers assigns
+VMIDs `200` through `204`. The default, `null`, leaves allocation to Proxmox.
+
+Before creating VMs, the role checks cluster-wide VM and container IDs and
+names, and checks them again before starting the VMs. A matching existing QEMU
+VM on the configured Proxmox node is accepted; any other ID or name conflict
+stops the run. A matching name and ID alone do
+not prove ownership, so verify existing VMs before running the role. The check
+depends on the API token's visibility and is not a reservation: another
+process can allocate an ID after the check. Keep the node lists and their order
+unchanged when reusing the same starting VMID. Reordering, inserting or removing
+nodes can change the calculated assignments and cause conflicts.
 
 ## Minimal Example
 
@@ -316,6 +339,7 @@ settings only; the role does not install Longhorn.
 | `talos_proxmox_proxmox_node` | `pve-01` | Proxmox cluster node to create VMs on |
 | `talos_proxmox_proxmox_storage` | `truenas-01-isos` | Proxmox storage name for ISOs/templates |
 | `talos_proxmox_proxmox_vm_storage` | `nvme` | Proxmox storage target for VM disks |
+| `talos_proxmox_vmid_starting_number` | `null` | Optional first VMID; assigns consecutive IDs to masters, then workers |
 | `talos_proxmox_proxmox_storage_url` | `{{ talos_proxmox_proxmox_api_url }}/nodes/{{ talos_proxmox_proxmox_node }}/storage/{{ talos_proxmox_proxmox_storage }}` | Proxmox storage API URL (derived) |
 | `talos_proxmox_talos_version` | `v1.14.5` | Talos release version to download/install (minimum supported: `v1.14.0`) |
 | `talos_proxmox_talos_api_cert_sans` | `[]` | Optional extra Talos API certificate DNS names or IP addresses on control-plane nodes; see the [HAProxy guide](docs/haproxy-talos-api.md) |

@@ -1,0 +1,32 @@
+---
+- name: Validate the requested VMID range
+  ansible.builtin.assert:
+    that:
+      - talos_proxmox_vmid_starting_number | type_debug == 'int'
+      - talos_proxmox_vmid_starting_number >= 100
+      - talos_proxmox_vmid_starting_number + ((talos_proxmox_masters + talos_proxmox_workers) | length) - 1 <= 999999999
+    fail_msg: "Set talos_proxmox_vmid_starting_number to an integer whose entire VMID range is between 100 and 999999999, or null to use automatic allocation."
+    quiet: true
+
+- name: Validate unique Talos VM names
+  ansible.builtin.assert:
+    that:
+      - talos_proxmox_vm_names | unique | list | length == talos_proxmox_vm_names | length
+    fail_msg: "Talos VM names must be unique across masters and workers."
+    quiet: true
+  vars:
+    talos_proxmox_vm_names: "{{ (talos_proxmox_masters + talos_proxmox_workers) | map(attribute='name') | list }}"
+
+- name: Get existing Proxmox VMs and containers across the cluster
+  community.proxmox.proxmox_vm_info:
+    ca_path: "{{ talos_proxmox_proxmox_ca_path | default(omit, true) }}"
+    api_user: "{{ talos_proxmox_proxmox_api_user }}"
+    api_host: "{{ talos_proxmox_proxmox_server }}"
+    api_port: "{{ talos_proxmox_proxmox_port }}"
+    api_token_id: "{{ talos_proxmox_proxmox_api_token_id }}"
+    api_token_secret: "{{ talos_proxmox_proxmox_api_token_secret }}"
+    type: all
+  register: talos_proxmox_existing_guests
+
+- name: Check existing Proxmox guest identities
+  import_tasks: validate_vmid_collisions.yml
