@@ -318,6 +318,7 @@ settings only; the role does not install Longhorn.
 | `talos_proxmox_proxmox_vm_storage` | `nvme` | Proxmox storage target for VM disks |
 | `talos_proxmox_proxmox_storage_url` | `{{ talos_proxmox_proxmox_api_url }}/nodes/{{ talos_proxmox_proxmox_node }}/storage/{{ talos_proxmox_proxmox_storage }}` | Proxmox storage API URL (derived) |
 | `talos_proxmox_talos_version` | `v1.14.5` | Talos release version to download/install (minimum supported: `v1.14.0`) |
+| `talos_proxmox_talos_api_cert_sans` | `[]` | Optional extra Talos API certificate DNS names or IP addresses on control-plane nodes; see the [HAProxy guide](docs/haproxy-talos-api.md) |
 | `talos_proxmox_talos_extensions` | `[]` | Additional official system extensions; QEMU guest agent is always included. See [extension configuration](#official-system-extensions) |
 | `talos_proxmox_enable_longhorn_support` | `false` | **Integration untested.** Automatically include `siderolabs/iscsi-tools`, `siderolabs/util-linux-tools` and kernel/sysctl prerequisites; does not install Longhorn |
 | `talos_proxmox_talos_installation_disk_path` | `/dev/sda` | Disk device inside VM where Talos will be installed |

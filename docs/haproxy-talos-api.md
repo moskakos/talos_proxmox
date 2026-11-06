@@ -129,10 +129,19 @@ With TLS passthrough the client verifies the Talos node certificate against the
 endpoint name, so every control plane node's certificate must contain
 `talos-api.example.com`.
 
-The right setting is `machine.certSANs`. Do not use `cluster.apiServer.certSANs`,
-which applies to the Kubernetes API.
+Set the optional role variable in inventory before installing or reinstalling:
 
-Preview with direct IP addresses first:
+```yaml
+talos_proxmox_talos_api_cert_sans:
+  - talos-api.example.com
+```
+
+The default is `[]`, which leaves this optional configuration disabled. The
+role adds the entries to `machine.certSANs` on every control-plane node, not
+to the Kubernetes API certificate. Inventory changes alone do not update
+already running nodes.
+
+For an existing cluster, preview a live patch using direct IP addresses first:
 
 ```bash
 talosctl \
@@ -150,8 +159,8 @@ the same command without `--dry-run` and let the certificates refresh. Do not
 repeat the patch unnecessarily, because a list patch can add duplicates. Do not
 skip TLS verification or enable SSL offloading as a workaround.
 
-Add the SAN to your machine configuration source as well (inventory or patch
-files), so a reinstall does not lose it.
+Keep the variable in inventory so the SAN is included again on reinstall. The
+live patch above does not change the inventory or regenerate the role's files.
 
 ## 6. Short node names in `--nodes`
 

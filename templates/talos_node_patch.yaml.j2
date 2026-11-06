@@ -1,6 +1,12 @@
 # Contains the talos machine configuration overrides specific for each node
 version: v1alpha1
 machine:
+{% if talos_proxmox_node in talos_proxmox_masters and talos_proxmox_talos_api_cert_sans %}
+  certSANs:
+{% for talos_proxmox_cert_san in talos_proxmox_talos_api_cert_sans %}
+    - {{ talos_proxmox_cert_san | to_json }}
+{% endfor %}
+{% endif %}
   network:
     interfaces:
       - deviceSelector:
