@@ -114,12 +114,23 @@ acceptance of the schematic alone does not prove availability.
 
 The following sequence describes what the role does in order (if called without any tags):
 
+- Stop if existing Talos or Kubernetes client configuration files are found
 - Create talos configuration and patch files
 - Create VMs in proxmox
 - Install Talos on the VMs by applying the talos configuration; switch to trunk if vlans are enabled
 - Bootstrap the talos cluster, wait for the cluster to be ready and get the kube config
 - Create all k8s resources defined in "talos_proxmox_static_resources"
 - Cleanup temporary files
+
+The check runs before all role tasks, including when using tags. It checks
+`~/.talos/config`, `~/.kube/config`, and the target selected by `KUBECONFIG`,
+on the host where the role runs. The role stops if any of these files exists:
+bootstrap overwrites the Talos configuration and can modify an existing
+Kubernetes configuration. Back up and move the existing files to a safe
+location before running the role. Preserve both the old and newly generated
+configurations when restoring access to other clusters. `talosctl` does not
+support merging into multiple `KUBECONFIG` paths; set a single path or unset
+the variable before running the role.
 
 ## Minimal Example
 

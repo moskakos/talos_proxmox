@@ -1,0 +1,44 @@
+---
+- name: Read the execution environment
+  ansible.builtin.setup:
+    gather_subset:
+      - '!all'
+      - '!min'
+      - env
+  register: talos_proxmox_client_environment
+
+- name: Validate the KUBECONFIG environment variable
+  ansible.builtin.assert:
+    that:
+      - (talos_proxmox_client_environment.ansible_facts.ansible_env.KUBECONFIG | default('')).split(':') | length <= 1
+    fail_msg: "talosctl cannot merge kubeconfig when KUBECONFIG contains multiple paths. Set it to a single path or unset it before running the role."
+    quiet: true
+
+- name: Check the configured kubeconfig path
+  ansible.builtin.stat:
+    path: "{{ talos_proxmox_kubeconfig_path }}"
+    follow: true
+    get_checksum: false
+  vars:
+    talos_proxmox_kubeconfig_path: "{{ talos_proxmox_client_environment.ansible_facts.ansible_env.KUBECONFIG | default('', true) or talos_proxmox_client_environment.ansible_facts.ansible_env.HOME ~ '/.kube/config' }}"
+  register: talos_proxmox_kubeconfig_path_stat
+
+- name: Check client configuration files
+  ansible.builtin.stat:
+    path: "{{ item }}"
+    get_checksum: false
+  loop: "{{ [ansible_env.HOME ~ '/.talos/config', talos_proxmox_client_environment.ansible_facts.ansible_env.HOME ~ '/.kube/config', talos_proxmox_kubeconfig_file] | unique | list }}"
+  vars:
+    talos_proxmox_kubeconfig_file: "{{ (talos_proxmox_client_environment.ansible_facts.ansible_env.KUBECONFIG | default('', true) or talos_proxmox_client_environment.ansible_facts.ansible_env.HOME ~ '/.kube/config') ~ ('/kubeconfig' if talos_proxmox_kubeconfig_path_stat.stat.isdir | default(false) else '') }}"
+  register: talos_proxmox_client_config_files
+
+- name: Stop if client configuration files already exist
+  ansible.builtin.fail:
+    msg: >-
+      Existing client configuration found: {{ talos_proxmox_existing_client_configs | join(', ') }}.
+      The role would overwrite the Talos configuration or modify the Kubernetes configuration.
+      Back up and move these files to a safe location before running the role again.
+      Preserve both the old and newly generated configurations when restoring access to other clusters.
+  vars:
+    talos_proxmox_existing_client_configs: "{{ talos_proxmox_client_config_files.results | selectattr('stat.exists') | map(attribute='item') | list }}"
+  when: talos_proxmox_existing_client_configs | length > 0

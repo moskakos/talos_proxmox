@@ -1,6 +1,10 @@
 ---
 # Main task file for talos_proxmox role
 
+- name: Protect existing client configuration
+  import_tasks: check_client_config.yml
+  tags: [always]
+
 - name: Validate minimum supported Talos version
   ansible.builtin.assert:
     that:
