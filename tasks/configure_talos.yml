@@ -86,8 +86,9 @@
     return_content: yes
   register: talos_proxmox_talos_iso_response
 
-- name: Set Talos ISO download URL and Installer Image
+- name: Set Talos ISO filename, download URL and Installer Image
   ansible.builtin.set_fact:
+    talos_proxmox_talos_iso_filename: "talos-{{ talos_proxmox_talos_version }}-{{ talos_proxmox_talos_iso_response.json.id }}-amd64.iso"
     talos_proxmox_talos_installer_image_url: "factory.talos.dev/metal-installer/{{ talos_proxmox_talos_iso_response.json.id }}:{{ talos_proxmox_talos_version }}"
     talos_proxmox_talos_iso_download_url: "https://factory.talos.dev/image/{{ talos_proxmox_talos_iso_response.json.id }}/{{ talos_proxmox_talos_version }}/metal-amd64.iso"
 

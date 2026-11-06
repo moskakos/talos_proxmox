@@ -96,6 +96,14 @@ These are generated during configuration, not static defaults. An unavailable
 extension/version combination can fail when Image Factory builds the assets;
 acceptance of the schematic alone does not prove availability.
 
+The Proxmox ISO filename includes both the Talos version and schematic ID:
+`talos-<talos-version>-<schematic-id>-amd64.iso`. Each provisioning run downloads
+the ISO and waits up to approximately ten minutes for the returned Proxmox task
+to finish with `OK`. Before creating VMs, the role checks that the exact ISO
+exists in storage and has a positive size. Download errors, timeouts and missing
+or empty files stop the run. The size check is not a checksum or a guarantee of
+file integrity.
+
 ## Install Requirements
 
 1. Install talosctl: https://docs.siderolabs.com/talos/v1.14/getting-started/talosctl
