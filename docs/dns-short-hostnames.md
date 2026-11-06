@@ -10,8 +10,8 @@ and host DNS options.
 | `talos_proxmox_search_domains` | `[]` | Search domains (`searchDomains.domains`) |
 | `talos_proxmox_host_dns` | `{}` | `hostDNS` settings, rendered as is |
 
-An empty value means the setting is not rendered at all, so existing
-configurations do not change.
+Empty search domains and host DNS settings are not rendered. An empty
+nameserver list does not remove existing nameservers.
 
 ```yaml
 talos_proxmox_nameservers:
