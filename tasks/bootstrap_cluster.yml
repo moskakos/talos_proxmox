@@ -4,23 +4,23 @@
 - name: Create talos configuration directory in homedir
   ansible.builtin.file:
     path: "{{ ansible_env.HOME }}/.talos"
-    mode: '0700'
+    mode: "0700"
     state: directory
 
 - name: Copy talos config files to homedir
   ansible.builtin.copy:
     src: "{{ talos_proxmox_talos_config_dir }}/talosconfig"
     dest: "{{ ansible_env.HOME }}/.talos/config"
-    mode: '0600'
+    mode: "0600"
     remote_src: true
 
 - name: Use talosctl commands for bootstrap
   environment:
     TALOSCONFIG: "{{ ansible_env.HOME }}/.talos/config"
   block:
-
     - name: Configure talos endpoints
       ansible.builtin.command: talosctl config endpoint {{ talos_proxmox_masters | map(attribute='ip') | join(' ') }}
+      changed_when: true
 
     - name: Wait for Nodes to be ready for bootstrap
       ansible.builtin.wait_for:
@@ -34,6 +34,7 @@
 
     - name: Bootstrap Talos cluster on first master
       ansible.builtin.command: talosctl bootstrap --nodes {{ talos_proxmox_masters[0].ip }}
+      changed_when: true
 
     - name: Wait for Kubernetes API to be available
       ansible.builtin.wait_for:
@@ -44,16 +45,14 @@
 
     - name: Get kubeconfig from the cluster
       ansible.builtin.command:
-        argv:
-          - talosctl
-          - kubeconfig
-          - "{{ talos_proxmox_cluster_kubeconfig_path }}"
-          - --nodes
-          - "{{ talos_proxmox_cluster_shared_ip }}"
-          - --merge=false
+        cmd: >-
+          talosctl kubeconfig {{ talos_proxmox_cluster_kubeconfig_path | quote }}
+          --nodes {{ talos_proxmox_cluster_shared_ip | quote }}
+          --merge=false
+      changed_when: true
 
 - name: Verify the bootstrapped Kubernetes connection
-  import_tasks: validate_kubernetes_connection.yml
+  ansible.builtin.import_tasks: validate_kubernetes_connection.yml
 
 - name: Ensure all kubernetes nodes are ready
   kubernetes.core.k8s_info:

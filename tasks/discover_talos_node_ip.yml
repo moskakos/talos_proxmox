@@ -4,7 +4,9 @@
     talos_proxmox_discovered_vms: "{{ talos_proxmox_vm_info.proxmox_vms | default([]) }}"
     talos_proxmox_net_entries: "{{ talos_proxmox_discovered_vms | selectattr('network', 'defined') | map(attribute='network') | sum(start=[]) }}"
     talos_proxmox_all_ips: "{{ talos_proxmox_net_entries | selectattr('ip-addresses', 'defined') | map(attribute='ip-addresses') | sum(start=[]) }}"
-    talos_proxmox_ipv4s: "{{ talos_proxmox_all_ips | selectattr('ip-address-type', 'equalto', 'ipv4') | map(attribute='ip-address') | reject('match', '^127\\.') | reject('match', '^169\\.254\\.') | unique | list }}"
+    talos_proxmox_ipv4s: >-
+      {{ talos_proxmox_all_ips | selectattr('ip-address-type', 'equalto', 'ipv4') | map(attribute='ip-address')
+         | reject('match', '^127\.') | reject('match', '^169\.254\.') | unique | list }}
   block:
     - name: Wait for guest-agent IPv4 information for {{ talos_proxmox_discovery_node.name }}
       block:

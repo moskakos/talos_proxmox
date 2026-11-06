@@ -3,7 +3,10 @@
   ansible.builtin.stat:
     path: "{{ item }}"
     get_checksum: false
-  loop: "{{ [talos_proxmox_client_environment.ansible_facts.ansible_env.HOME ~ '/.talos/config', talos_proxmox_client_environment.ansible_facts.ansible_env.HOME ~ '/.kube/config', talos_proxmox_cluster_kubeconfig_path] | unique | list }}"
+  loop: >-
+    {{ [talos_proxmox_client_environment.ansible_facts.ansible_env.HOME ~ '/.talos/config',
+        talos_proxmox_client_environment.ansible_facts.ansible_env.HOME ~ '/.kube/config',
+        talos_proxmox_cluster_kubeconfig_path] | unique | list }}
   register: talos_proxmox_client_config_files
 
 - name: Stop if client configuration files already exist

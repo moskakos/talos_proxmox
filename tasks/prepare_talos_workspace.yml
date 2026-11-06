@@ -2,8 +2,8 @@
 - name: Read the Talos configuration host environment
   ansible.builtin.setup:
     gather_subset:
-      - '!all'
-      - '!min'
+      - "!all"
+      - "!min"
       - env
   register: talos_proxmox_workspace_environment
 

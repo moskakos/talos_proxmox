@@ -1,5 +1,4 @@
 ---
-
 - name: Validate static resource list
   ansible.builtin.assert:
     that:
@@ -16,12 +15,14 @@
       - item.definition is not defined or item.definition is mapping
       - item.src is not defined or (item.src is string and item.src | trim | length > 0)
       - not (item.template | default(false)) or item.src is defined
-    fail_msg: "Each static resource must specify exactly one of definition (a dictionary) or src (a non-empty path). template must be a boolean and template: true requires src."
+    fail_msg: >-
+      Each static resource must specify exactly one of definition (a dictionary) or src (a non-empty path).
+      template must be a boolean and template: true requires src.
     quiet: true
   loop: "{{ talos_proxmox_static_resources }}"
 
 - name: Verify the Kubernetes connection before deploying static resources
-  import_tasks: validate_kubernetes_connection.yml
+  ansible.builtin.import_tasks: validate_kubernetes_connection.yml
   when: talos_proxmox_static_resources | length > 0
 
 - name: Apply static resources
@@ -42,4 +43,6 @@
   environment: "{{ talos_proxmox_kubernetes_environment }}"
   loop: "{{ talos_proxmox_static_resources }}"
   loop_control:
-    label: "{{ item.definition.metadata.name | default('kubernetes resource', true) if item.definition is defined else item.name | default('kubernetes resource', true) }}"
+    label: >-
+      {{ item.definition.metadata.name | default('kubernetes resource', true)
+         if item.definition is defined else item.name | default('kubernetes resource', true) }}

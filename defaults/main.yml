@@ -20,7 +20,7 @@ talos_proxmox_proxmox_storage_url: "{{ talos_proxmox_proxmox_api_url }}/nodes/{{
 
 # Optional first VMID; assigns consecutive IDs to masters, then workers.
 # null lets Proxmox choose the next available ID for each VM.
-talos_proxmox_vmid_starting_number: null
+talos_proxmox_vmid_starting_number:
 
 talos_proxmox_talos_version: "v1.14.5"
 # Additional official extensions: https://github.com/siderolabs/extensions#extension-catalog
@@ -36,7 +36,7 @@ talos_proxmox_talos_extensions: []
 # Also applies existing kernel/sysctl prerequisites; does not install Longhorn.
 talos_proxmox_enable_longhorn_support: false
 
-talos_proxmox_talos_installation_disk_path: "/dev/sda"  # Disk inside VM to install Talos onto (e.g. /dev/sda)
+talos_proxmox_talos_installation_disk_path: "/dev/sda" # Disk inside VM to install Talos onto (e.g. /dev/sda)
 talos_proxmox_talos_cpu_type: "host"
 
 # Additional Talos API certificate SANs on control-plane nodes, e.g. an HAProxy endpoint.
@@ -179,7 +179,7 @@ talos_proxmox_static_resources: []
   #       namespace: testing
   #     spec:
   #       paused: True
-  #   wait: yes
+  #   wait: true
   #   wait_condition:
   #     type: Progressing
   #     status: Unknown

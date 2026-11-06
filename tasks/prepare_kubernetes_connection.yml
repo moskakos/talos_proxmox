@@ -2,8 +2,8 @@
 - name: Read the execution environment
   ansible.builtin.setup:
     gather_subset:
-      - '!all'
-      - '!min'
+      - "!all"
+      - "!min"
       - env
   register: talos_proxmox_client_environment
 
@@ -20,12 +20,17 @@
     follow: true
     get_checksum: false
   vars:
-    talos_proxmox_kubeconfig_path: "{{ talos_proxmox_client_environment.ansible_facts.ansible_env.KUBECONFIG | default('', true) or talos_proxmox_client_environment.ansible_facts.ansible_env.HOME ~ '/.kube/config' }}"
+    talos_proxmox_kubeconfig_path: >-
+      {{ talos_proxmox_client_environment.ansible_facts.ansible_env.KUBECONFIG | default('', true)
+         or talos_proxmox_client_environment.ansible_facts.ansible_env.HOME ~ '/.kube/config' }}
   register: talos_proxmox_kubeconfig_path_stat
 
 - name: Set the cluster kubeconfig destination
   ansible.builtin.set_fact:
-    talos_proxmox_cluster_kubeconfig_path: "{{ (talos_proxmox_client_environment.ansible_facts.ansible_env.KUBECONFIG | default('', true) or talos_proxmox_client_environment.ansible_facts.ansible_env.HOME ~ '/.kube/config') ~ ('/kubeconfig' if talos_proxmox_kubeconfig_path_stat.stat.isdir | default(false) else '') }}"
+    talos_proxmox_cluster_kubeconfig_path: >-
+      {{ (talos_proxmox_client_environment.ansible_facts.ansible_env.KUBECONFIG | default('', true)
+          or talos_proxmox_client_environment.ansible_facts.ansible_env.HOME ~ '/.kube/config')
+         ~ ('/kubeconfig' if talos_proxmox_kubeconfig_path_stat.stat.isdir | default(false) else '') }}
     talos_proxmox_kubernetes_environment: {}
 
 - name: Disable inherited Kubernetes authentication overrides

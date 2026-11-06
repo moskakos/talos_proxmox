@@ -2,14 +2,14 @@
 # Install Talos / Apply Talos configuration
 
 - name: Discover each Talos node IPv4 address
-  include_tasks: discover_talos_node_ip.yml
+  ansible.builtin.include_tasks: discover_talos_node_ip.yml
   loop: "{{ talos_proxmox_masters + talos_proxmox_workers }}"
   loop_control:
     loop_var: talos_proxmox_discovery_node
     label: "{{ talos_proxmox_discovery_node.name }}"
 
 - name: Install Talos on master nodes
-  include_tasks: install_talos_node.yml
+  ansible.builtin.include_tasks: install_talos_node.yml
   vars:
     talos_proxmox_current_node_type: "controlplane"
   loop: "{{ talos_proxmox_masters }}"
@@ -17,7 +17,7 @@
     label: "{{ item.name }}"
 
 - name: Install Talos on worker nodes
-  include_tasks: install_talos_node.yml
+  ansible.builtin.include_tasks: install_talos_node.yml
   vars:
     talos_proxmox_current_node_type: "worker"
   loop: "{{ talos_proxmox_workers }}"

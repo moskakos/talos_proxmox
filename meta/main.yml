@@ -6,9 +6,7 @@ galaxy_info:
     provisioning, Talos configuration generation, Cilium and VLAN network
     configuration, bootstrap via talosctl and creation of static resources.
   license: MIT
-  min_ansible_version: '2.12'
-  platforms:
-    - name: Proxmox
+  min_ansible_version: "2.12"
   galaxy_tags:
     - talos
     - proxmox

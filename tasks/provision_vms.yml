@@ -2,7 +2,7 @@
 # Provision VMs on Proxmox for masters and workers
 
 - name: Validate and check requested VM IDs
-  import_tasks: validate_vmids.yml
+  ansible.builtin.import_tasks: validate_vmids.yml
   when: talos_proxmox_vmid_starting_number is not none
 
 - name: Validate Proxmox ISO download authentication
@@ -28,7 +28,7 @@
       url: "{{ talos_proxmox_talos_iso_download_url }}"
     validate_certs: true
     ca_path: "{{ talos_proxmox_proxmox_ca_path | default(omit, true) }}"
-    return_content: yes
+    return_content: true
   register: talos_proxmox_iso_download
 
 - name: Validate the Proxmox ISO download task ID
@@ -48,7 +48,7 @@
       Authorization: "PVEAPIToken={{ talos_proxmox_proxmox_api_user }}!{{ talos_proxmox_proxmox_api_token_id }}={{ talos_proxmox_proxmox_api_token_secret }}"
     validate_certs: true
     ca_path: "{{ talos_proxmox_proxmox_ca_path | default(omit, true) }}"
-    return_content: yes
+    return_content: true
   register: talos_proxmox_iso_download_status
   until: talos_proxmox_iso_download_status is failed or (talos_proxmox_iso_download_status.json.data.status | default('')) == 'stopped'
   retries: 100
@@ -72,7 +72,7 @@
       Authorization: "PVEAPIToken={{ talos_proxmox_proxmox_api_user }}!{{ talos_proxmox_proxmox_api_token_id }}={{ talos_proxmox_proxmox_api_token_secret }}"
     validate_certs: true
     ca_path: "{{ talos_proxmox_proxmox_ca_path | default(omit, true) }}"
-    return_content: yes
+    return_content: true
   register: talos_proxmox_iso_content
 
 - name: Verify the completed ISO exists and has a positive size
@@ -85,7 +85,9 @@
     fail_msg: "The downloaded Talos ISO {{ talos_proxmox_talos_iso_filename }} is missing or has an invalid or empty size in Proxmox storage."
     quiet: true
   vars:
-    talos_proxmox_matching_isos: "{{ talos_proxmox_iso_content.json.data | selectattr('volid', 'equalto', talos_proxmox_proxmox_storage ~ ':iso/' ~ talos_proxmox_talos_iso_filename) | list }}"
+    talos_proxmox_matching_isos: >-
+      {{ talos_proxmox_iso_content.json.data
+         | selectattr('volid', 'equalto', talos_proxmox_proxmox_storage ~ ':iso/' ~ talos_proxmox_talos_iso_filename) | list }}
 
 - name: Create talos VMs
   community.proxmox.proxmox_kvm:
@@ -100,21 +102,20 @@
     vmid: "{{ (talos_proxmox_vmid_starting_number + talos_proxmox_vm_index) if talos_proxmox_vmid_starting_number is not none else omit }}"
     cores: "{{ item.cores }}"
     memory: "{{ item.memory }}"
-    cpu: "{{ talos_proxmox_talos_cpu_type}}"
+    cpu: "{{ talos_proxmox_talos_cpu_type }}"
     net:
-      net0: "model=virtio,bridge={{ talos_proxmox_k8s_vmbr }},firewall=0{% if talos_proxmox_mgmt_vlan_id %}{{ ',tag=' ~ talos_proxmox_mgmt_vlan_id }}{% endif %}"
+      net0: >-
+        model=virtio,bridge={{ talos_proxmox_k8s_vmbr }},firewall=0{% if talos_proxmox_mgmt_vlan_id %}{{
+        ',tag=' ~ talos_proxmox_mgmt_vlan_id }}{% endif %}
     ostype: l26
     scsihw: virtio-scsi-single
-    onboot: yes
+    onboot: true
     agent: true
     state: present
-    scsi: "{{
-      ({ 'scsi0': talos_proxmox_proxmox_vm_storage ~ ':' ~ item.disk ~ ',format=raw' })
-      | combine(
-        ( { 'scsi1': talos_proxmox_proxmox_vm_storage ~ ':' ~ item.storage_disk ~ ',format=raw' } )
-        if (item.storage_disk | default(0, true) | int) > 0 else {}
-      )
-    }}"
+    scsi: >-
+      {{ ({ 'scsi0': talos_proxmox_proxmox_vm_storage ~ ':' ~ item.disk ~ ',format=raw' })
+         | combine(({ 'scsi1': talos_proxmox_proxmox_vm_storage ~ ':' ~ item.storage_disk ~ ',format=raw' })
+                   if (item.storage_disk | default(0, true) | int) > 0 else {}) }}
     ide:
       ide2: "{{ talos_proxmox_proxmox_storage }}:iso/{{ talos_proxmox_talos_iso_filename }},media=cdrom"
   loop: "{{ talos_proxmox_masters + talos_proxmox_workers }}"
@@ -123,7 +124,7 @@
     label: "{{ item.name }}"
 
 - name: Recheck VM identities before starting
-  import_tasks: validate_vmids.yml
+  ansible.builtin.import_tasks: validate_vmids.yml
   when: talos_proxmox_vmid_starting_number is not none
 
 - name: Start talos VMs

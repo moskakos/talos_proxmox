@@ -11,20 +11,16 @@
     connect_timeout: 3
     msg: "Talos API port {{ talos_proxmox_talos_node_ips[item.name] }}:50000 for {{ item.name }} did not become reachable within 300 seconds."
 
-- name: Create Talos node patch for {{ item.name }}
+- name: Apply Talos configuration to {{ item.name }}
   ansible.builtin.command:
-    argv:
-      - talosctl
-      - apply-config
-      - --insecure
-      - --nodes
-      - "{{ talos_proxmox_talos_node_ips[item.name] }}"
-      - --file
-      - "{{ talos_proxmox_talos_config_dir }}/{{ talos_proxmox_current_node_type }}.yaml"
-      - --config-patch
-      - "@{{ talos_proxmox_talos_config_dir }}/talos_node_patch_{{ item.name }}.yaml"
+    cmd: >-
+      talosctl apply-config --insecure
+      --nodes {{ talos_proxmox_talos_node_ips[item.name] | quote }}
+      --file {{ (talos_proxmox_talos_config_dir ~ '/' ~ talos_proxmox_current_node_type ~ '.yaml') | quote }}
+      --config-patch {{ ('@' ~ talos_proxmox_talos_config_dir ~ '/talos_node_patch_' ~ item.name ~ '.yaml') | quote }}
+  changed_when: true
 
-- name: Switch {{ item.name }} to trunk port in proxmox
+- name: Switch Proxmox interface to trunk port for {{ item.name }}
   community.proxmox.proxmox_nic:
     ca_path: "{{ talos_proxmox_proxmox_ca_path | default(omit, true) }}"
     api_user: "{{ talos_proxmox_proxmox_api_user }}"

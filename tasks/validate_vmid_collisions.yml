@@ -13,8 +13,11 @@
   vars:
     talos_proxmox_expected_vmid: "{{ talos_proxmox_vmid_starting_number + talos_proxmox_vm_index }}"
     talos_proxmox_id_matches: "{{ talos_proxmox_existing_guests.proxmox_vms | selectattr('vmid', 'equalto', talos_proxmox_expected_vmid) | list }}"
-    talos_proxmox_name_matches: "{{ talos_proxmox_existing_guests.proxmox_vms | selectattr('name', 'defined') | selectattr('name', 'equalto', item.name) | list }}"
-    talos_proxmox_matching_guests: "{{ talos_proxmox_id_matches | selectattr('name', 'defined') | selectattr('name', 'equalto', item.name) | selectattr('node', 'equalto', talos_proxmox_proxmox_node) | selectattr('type', 'equalto', 'qemu') | list }}"
+    talos_proxmox_name_matches: >-
+      {{ talos_proxmox_existing_guests.proxmox_vms | selectattr('name', 'defined') | selectattr('name', 'equalto', item.name) | list }}
+    talos_proxmox_matching_guests: >-
+      {{ talos_proxmox_id_matches | selectattr('name', 'defined') | selectattr('name', 'equalto', item.name)
+         | selectattr('node', 'equalto', talos_proxmox_proxmox_node) | selectattr('type', 'equalto', 'qemu') | list }}
   loop: "{{ talos_proxmox_masters + talos_proxmox_workers }}"
   loop_control:
     index_var: talos_proxmox_vm_index

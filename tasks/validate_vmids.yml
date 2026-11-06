@@ -29,4 +29,4 @@
   register: talos_proxmox_existing_guests
 
 - name: Check existing Proxmox guest identities
-  import_tasks: validate_vmid_collisions.yml
+  ansible.builtin.import_tasks: validate_vmid_collisions.yml

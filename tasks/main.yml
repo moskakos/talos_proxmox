@@ -2,15 +2,15 @@
 # Main task file for talos_proxmox role
 
 - name: Prepare persistent Talos configuration paths
-  import_tasks: prepare_talos_workspace.yml
+  ansible.builtin.import_tasks: prepare_talos_workspace.yml
   tags: [configure_talos, install_talos, bootstrap_cluster]
 
 - name: Prepare Kubernetes client connection settings
-  import_tasks: prepare_kubernetes_connection.yml
+  ansible.builtin.import_tasks: prepare_kubernetes_connection.yml
   tags: [bootstrap_cluster, deploy_static_resources]
 
 - name: Protect existing client configuration before bootstrap
-  import_tasks: check_client_config.yml
+  ansible.builtin.import_tasks: check_client_config.yml
   tags: [bootstrap_cluster]
 
 - name: Validate minimum supported Talos version
@@ -22,20 +22,21 @@
   tags: [always]
 
 - name: Generate and distribute Talos configuration
-  import_tasks: configure_talos.yml
+  ansible.builtin.import_tasks: configure_talos.yml
   tags: [configure_talos]
 
-- import_tasks: provision_vms.yml
+- name: Provision Talos VMs
+  ansible.builtin.import_tasks: provision_vms.yml
   tags: [create_vms]
 
 - name: Install Talos on provisioned VMs
-  import_tasks: install_talos.yml
+  ansible.builtin.import_tasks: install_talos.yml
   tags: [install_talos]
 
 - name: Bootstrap Talos Kubernetes cluster
-  import_tasks: bootstrap_cluster.yml
+  ansible.builtin.import_tasks: bootstrap_cluster.yml
   tags: [bootstrap_cluster]
 
 - name: Deploy static resources
-  import_tasks: deploy_static_resources.yml
+  ansible.builtin.import_tasks: deploy_static_resources.yml
   tags: [deploy_static_resources]
