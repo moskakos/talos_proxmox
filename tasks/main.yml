@@ -35,7 +35,3 @@
 - name: Cleanup temporary files
   import_tasks: cleanup.yml
   tags: [cleanup]
-
-- name: Uninstall cluster
-  import_tasks: uninstall.yml
-  tags: [never, uninstall]

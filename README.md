@@ -231,7 +231,6 @@ You can target specific steps or do other tasks by calling the role with specifi
   - `bootstrap_cluster`: Bootstrap the talos cluster
    - `deploy_static_resources`: Create all k8s resources defined in "talos_proxmox_static_resources"
    - `cleanup`: Do cleanup tasks after the installation
-  - `uninstall`: Uninstall the talos cluster by deleting the proxmox VMs
 
 ## How To
 
