@@ -39,14 +39,16 @@ talos_proxmox_enable_longhorn_support: false
 talos_proxmox_talos_installation_disk_path: "/dev/sda" # Disk inside VM to install Talos onto (e.g. /dev/sda)
 talos_proxmox_talos_cpu_type: "host"
 
-# Additional Talos API certificate SANs on control-plane nodes, e.g. an HAProxy endpoint.
-# Empty disables this optional configuration; these are not Kubernetes API SANs.
-talos_proxmox_talos_api_cert_sans: []
-
 talos_proxmox_cluster_name: "kube.example.com"
 talos_proxmox_cluster_shared_ip: 192.168.1.20
 talos_proxmox_mgmt_network: "192.168.1.0/24"
 talos_proxmox_mgmt_gateway: "192.168.1.254"
+
+# Additional Talos API certificate SANs on control-plane nodes, e.g. an HAProxy endpoint.
+# Empty disables this optional configuration; these are not Kubernetes API SANs.
+# talos_proxmox_talos_api_cert_sans:
+#   - "{{ talos_proxmox_cluster_name }}"
+talos_proxmox_talos_api_cert_sans: []
 
 # Enable VLAN interfaces on Talos nodes and select them as Cilium devices. If false, VM interfaces use access ports.
 talos_proxmox_enable_vlans: false
