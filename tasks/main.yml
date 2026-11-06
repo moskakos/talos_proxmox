@@ -1,6 +1,10 @@
 ---
 # Main task file for talos_proxmox role
 
+- name: Prepare persistent Talos configuration paths
+  import_tasks: prepare_talos_workspace.yml
+  tags: [configure_talos, install_talos, bootstrap_cluster]
+
 - name: Prepare Kubernetes client connection settings
   import_tasks: prepare_kubernetes_connection.yml
   tags: [bootstrap_cluster, deploy_static_resources]
@@ -35,7 +39,3 @@
 - name: Deploy static resources
   import_tasks: deploy_static_resources.yml
   tags: [deploy_static_resources]
-
-- name: Cleanup temporary files
-  import_tasks: cleanup.yml
-  tags: [cleanup]

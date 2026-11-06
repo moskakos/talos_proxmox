@@ -9,7 +9,7 @@
 
 - name: Copy talos config files to homedir
   ansible.builtin.copy:
-    src: /tmp/.talos/talosconfig
+    src: "{{ talos_proxmox_talos_config_dir }}/talosconfig"
     dest: "{{ ansible_env.HOME }}/.talos/config"
     mode: '0600'
     remote_src: true

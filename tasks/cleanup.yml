@@ -1,7 +1,0 @@
----
-# Cleanup temporary files and directories created during the Talos Proxmox setup
-
-- name: Delete /tmp/.talos directory
-  ansible.builtin.file:
-    path: /tmp/.talos
-    state: absent

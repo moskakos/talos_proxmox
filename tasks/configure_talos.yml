@@ -27,11 +27,15 @@
     quiet: true
   loop: "{{ talos_proxmox_talos_api_cert_sans }}"
 
-- name: Ensure hidden talos directory exists
+- name: Ensure private Talos configuration directories exist
   ansible.builtin.file:
-    path: /tmp/.talos
+    path: "{{ item }}"
     state: directory
     mode: '0700'
+  loop:
+    - "{{ talos_proxmox_workspace_environment.ansible_facts.ansible_env.HOME }}/.talos"
+    - "{{ talos_proxmox_workspace_environment.ansible_facts.ansible_env.HOME }}/.talos/clusters"
+    - "{{ talos_proxmox_talos_config_dir }}"
 
 - name: Add cilium helm repo if cilium is to be installed
   ansible.builtin.command:
@@ -41,16 +45,23 @@
 - name: Generate cilium values file
   ansible.builtin.template:
     src: cilium_values.yaml.j2
-    dest: /tmp/.talos/cilium_values.yaml
+    dest: "{{ talos_proxmox_talos_config_dir }}/cilium_values.yaml"
+    mode: '0600'
   when: talos_proxmox_install_cilium
 
 - name: Generate cilium manifests
   ansible.builtin.command:
-    cmd: >-
-      helm template cilium cilium/cilium
-      --version {{ talos_proxmox_cilium_version }}
-      --namespace kube-system
-      --values /tmp/.talos/cilium_values.yaml
+    argv:
+      - helm
+      - template
+      - cilium
+      - cilium/cilium
+      - --version
+      - "{{ talos_proxmox_cilium_version }}"
+      - --namespace
+      - kube-system
+      - --values
+      - "{{ talos_proxmox_talos_config_dir }}/cilium_values.yaml"
   when: talos_proxmox_install_cilium
   register: talos_proxmox_cilium_manifest
 
@@ -73,13 +84,19 @@
 - name: Create Talos ISO customization file
   ansible.builtin.template:
     src: talos_iso_customizations.yaml.j2
-    dest: /tmp/.talos/talos_iso_customizations.yaml
+    dest: "{{ talos_proxmox_talos_config_dir }}/talos_iso_customizations.yaml"
+    mode: '0600'
+
+- name: Read Talos ISO customizations from the configuration host
+  ansible.builtin.slurp:
+    src: "{{ talos_proxmox_talos_config_dir }}/talos_iso_customizations.yaml"
+  register: talos_proxmox_iso_customizations_file
 
 - name: Get Talos ISO with customizations applied
   ansible.builtin.uri:
     url: "https://factory.talos.dev/schematics"
     method: POST
-    body: "{{ lookup('file', '/tmp/.talos/talos_iso_customizations.yaml') }}"
+    body: "{{ talos_proxmox_iso_customizations_file.content | b64decode }}"
     status_code: 201
     headers:
       Content-Type: "application/x-yaml"
@@ -95,12 +112,14 @@
 - name: Create Talos config patch file
   ansible.builtin.template:
     src: talos_config_patch.yaml.j2
-    dest: /tmp/.talos/talos_config_patch.yaml
+    dest: "{{ talos_proxmox_talos_config_dir }}/talos_config_patch.yaml"
+    mode: '0600'
 
 - name: Create talos node patch file
   ansible.builtin.template:
     src: talos_node_patch.yaml.j2
-    dest: /tmp/.talos/talos_node_patch_{{ talos_proxmox_node.name }}.yaml
+    dest: "{{ talos_proxmox_talos_config_dir }}/talos_node_patch_{{ talos_proxmox_node.name }}.yaml"
+    mode: '0600'
   loop: "{{ talos_proxmox_masters + talos_proxmox_workers }}"
   loop_control:
     loop_var: talos_proxmox_node
@@ -109,17 +128,43 @@
 
 - name: Generate talos secrets
   ansible.builtin.command:
-    cmd: >-
-      talosctl gen secrets --output-file /tmp/.talos/talos_secrets.yaml
+    argv:
+      - talosctl
+      - gen
+      - secrets
+      - --output-file
+      - "{{ talos_proxmox_talos_config_dir }}/talos_secrets.yaml"
   args:
-    creates: /tmp/.talos/talos_secrets.yaml
+    creates: "{{ talos_proxmox_talos_config_dir }}/talos_secrets.yaml"
+
+- name: Protect the Talos secrets bundle
+  ansible.builtin.file:
+    path: "{{ talos_proxmox_talos_config_dir }}/talos_secrets.yaml"
+    mode: '0600'
 
 - name: Generate talos configuration files
   ansible.builtin.command:
-    cmd: >-
-      talosctl gen config {{ talos_proxmox_cluster_name }} https://{{ talos_proxmox_cluster_name }}:6443
-      --talos-version {{ talos_proxmox_talos_version }}
-      --with-secrets /tmp/.talos/talos_secrets.yaml
-      --output /tmp/.talos
-      --config-patch @/tmp/.talos/talos_config_patch.yaml
-      --force
+    argv:
+      - talosctl
+      - gen
+      - config
+      - "{{ talos_proxmox_cluster_name }}"
+      - "https://{{ talos_proxmox_cluster_name }}:6443"
+      - --talos-version
+      - "{{ talos_proxmox_talos_version }}"
+      - --with-secrets
+      - "{{ talos_proxmox_talos_config_dir }}/talos_secrets.yaml"
+      - --output
+      - "{{ talos_proxmox_talos_config_dir }}"
+      - --config-patch
+      - "@{{ talos_proxmox_talos_config_dir }}/talos_config_patch.yaml"
+      - --force
+
+- name: Protect generated Talos client and machine configurations
+  ansible.builtin.file:
+    path: "{{ talos_proxmox_talos_config_dir }}/{{ item }}"
+    mode: '0600'
+  loop:
+    - controlplane.yaml
+    - worker.yaml
+    - talosconfig

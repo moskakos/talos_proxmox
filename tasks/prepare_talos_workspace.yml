@@ -1,0 +1,22 @@
+---
+- name: Read the Talos configuration host environment
+  ansible.builtin.setup:
+    gather_subset:
+      - '!all'
+      - '!min'
+      - env
+  register: talos_proxmox_workspace_environment
+
+- name: Validate the cluster directory name
+  ansible.builtin.assert:
+    that:
+      - talos_proxmox_cluster_name is string
+      - talos_proxmox_cluster_name is match('^[A-Za-z0-9](?:[A-Za-z0-9.-]*[A-Za-z0-9])?$')
+      - "'..' not in talos_proxmox_cluster_name"
+      - talos_proxmox_cluster_name | length <= 253
+    fail_msg: "Set talos_proxmox_cluster_name to a hostname containing only letters, numbers, dots and hyphens, without path separators or consecutive dots."
+    quiet: true
+
+- name: Set the persistent Talos configuration directory
+  ansible.builtin.set_fact:
+    talos_proxmox_talos_config_dir: "{{ talos_proxmox_workspace_environment.ansible_facts.ansible_env.HOME }}/.talos/clusters/{{ talos_proxmox_cluster_name }}"

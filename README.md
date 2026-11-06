@@ -133,7 +133,6 @@ The following sequence describes what the role does in order (if called without 
 - Install Talos on the VMs by applying the talos configuration; switch to trunk if vlans are enabled
 - Bootstrap the talos cluster, wait for the cluster to be ready and get the kube config
 - Create all k8s resources defined in "talos_proxmox_static_resources"
-- Cleanup temporary files
 
 The protection check runs before provisioning in an untagged installation and
 when selecting `bootstrap_cluster`, but not for other tag-only runs. It checks
@@ -159,8 +158,25 @@ readiness checks and resource deployment, the role verifies that the kubeconfig
 current context uniquely references the configured Kubernetes API endpoint,
 `https://<talos_proxmox_cluster_name>:6443`. A missing file, invalid context or
 different endpoint stops the run. This endpoint check does not prove cluster
-ownership; use the correct kubeconfig and inventory. `cleanup` does not check
-client configuration files.
+ownership; use the correct kubeconfig and inventory.
+
+### Persistent Talos configuration
+
+The role stores generated files on the execution host under
+`~/.talos/clusters/<talos_proxmox_cluster_name>/`, separately from the
+`~/.talos/config` client configuration. Directories use permissions `0700`;
+generated files use `0600`. The secrets bundle is reused only from this
+cluster's directory; configuration and patch files are regenerated when
+`configure_talos` runs. Back up this directory securely for recovery.
+
+These files are retained after installation; there is no automatic cleanup
+or `cleanup` tag. `install_talos` and `bootstrap_cluster` tag runs use the same
+directory and require the files from a prior `configure_talos` run. File
+retention does not make bootstrap repeatable or add support for expanding an
+existing cluster. Do not run simultaneous installations for the same cluster.
+When rebuilding an unrelated cluster with the same name, archive the previous
+directory first to avoid reusing its secrets. Files from the former
+`/tmp/.talos` directory are not migrated automatically.
 
 ### Optional starting VMID
 
@@ -255,7 +271,6 @@ You can target specific steps or do other tasks by calling the role with specifi
   - `install_talos`: Install Talos on the VMs by applying the talos configuration
   - `bootstrap_cluster`: Bootstrap the talos cluster
    - `deploy_static_resources`: Create all k8s resources defined in "talos_proxmox_static_resources"
-   - `cleanup`: Do cleanup tasks after the installation
 
 ## How To
 

@@ -10,9 +10,9 @@
       - --nodes
       - "{{ talos_proxmox_talos_node_ips[item.name] }}"
       - --file
-      - "/tmp/.talos/{{ talos_proxmox_current_node_type }}.yaml"
+      - "{{ talos_proxmox_talos_config_dir }}/{{ talos_proxmox_current_node_type }}.yaml"
       - --config-patch
-      - "@/tmp/.talos/talos_node_patch_{{ item.name }}.yaml"
+      - "@{{ talos_proxmox_talos_config_dir }}/talos_node_patch_{{ item.name }}.yaml"
 
 - name: Switch {{ item.name }} to trunk port in proxmox
   community.proxmox.proxmox_nic:
