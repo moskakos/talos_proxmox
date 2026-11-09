@@ -29,6 +29,102 @@ existing cluster is not supported.
 - When specifying a starting VMID, the Proxmox API token needs permission to
   list all VMs and containers across the cluster to detect ID and name conflicts
 
+## Proxmox API permissions (PVE 8 and 9)
+
+Use a dedicated `user@pve` account and an API token with privilege separation
+enabled. Assign the ACLs below to **both the user and the token**, with
+propagation enabled: a separated token's effective permissions are the
+intersection of its ACLs and its user's permissions.
+
+| ACL path | Required privileges | Purpose |
+|---|---|---|
+| `/vms` | `VM.Allocate`, `VM.Audit`, `VM.Config.CDROM`, `VM.Config.CPU`, `VM.Config.Disk`, `VM.Config.HWType`, `VM.Config.Memory`, `VM.Config.Network`, `VM.Config.Options`, `VM.PowerMgmt` | Create, inspect, configure and start VMs; cluster-wide guest visibility for VMID/name collision checks |
+| `/vms` (PVE 9) | `VM.GuestAgent.Audit` | Read guest-agent network information to discover installation IP addresses |
+| `/vms` (PVE 8 only) | `VM.Monitor` | Legacy guest-agent access |
+| `/storage/<ISO storage>` | `Datastore.Audit`, `Datastore.AllocateTemplate` | Inspect and download the Talos ISO |
+| `/storage/<VM disk storage>` | `Datastore.Audit`, `Datastore.AllocateSpace` | Inspect storage and allocate VM disks |
+| `/nodes/<node>` | `Sys.Audit`, `Sys.AccessNetwork` when available | Inspect the node and allow server-side ISO URL downloads |
+| `/sdn/zones/localnetwork/<bridge>` | `SDN.Use` | Attach VM interfaces to the selected local Linux bridge |
+| `/` (legacy PVE 8 download only) | `Sys.Audit`, `Sys.Modify` | Required by older `download-url` endpoints without `Sys.AccessNetwork`; grants broad system configuration access |
+
+If both storage names are identical, combine their privileges on that path.
+For an SDN VNet rather than a local bridge, use its corresponding SDN ACL
+path instead; the setup script configures the local-bridge path above.
+`/vms` covers **all VMs and containers**, not just this installation.
+
+### Setup script
+
+Run [setup_proxmox_api.sh](setup_proxmox_api.sh) as root on a Proxmox node.
+It detects PVE 8/9, selects the corresponding guest-agent privilege and
+prefers `Sys.AccessNetwork` over the legacy root-level grant. On PVE 8,
+the legacy grant requires explicit confirmation; on PVE 9, a missing
+`Sys.AccessNetwork` stops the script instead of granting `Sys.Modify`.
+
+Set the node, storage and bridge names to match your inventory. For example:
+
+```bash
+PROXMOX_API_USER='talos@pve' \
+PROXMOX_API_TOKEN_ID='provisioning' \
+PROXMOX_API_TOKEN_EXPIRE_DAYS=30 \
+PROXMOX_NODE='pve-01' \
+PROXMOX_STORAGE='truenas-01-isos' \
+PROXMOX_VM_STORAGE='nvme' \
+K8S_VMBR='vmbr0' \
+bash ./setup_proxmox_api.sh
+```
+
+The lifetime must be a whole number from 1 to 36500 days. Every run creates a
+**new token with a random suffix**, not a replacement for an existing token.
+Store the secret securely when printed; it is shown only once. Copy the
+printed username, suffixed token ID (without `user@pve!`) and secret into
+`talos_proxmox_proxmox_api_user`, `talos_proxmox_proxmox_api_token_id` and
+`talos_proxmox_proxmox_api_token_secret`, respectively.
+
+The script uses a combined `TalosInstaller` role on the selected ACL paths.
+Consequently, both selected storages receive all three listed datastore
+privileges, including disk allocation on ISO storage and ISO upload on disk
+storage. The table above can be used for narrower, separately scoped manual
+roles. Existing unrelated ACLs and tokens are preserved; review them separately
+because this script does not revoke earlier broad grants.
+
+### Upgrading from PVE 8 to PVE 9
+
+PVE 9 removes `VM.Monitor`. For this role, replace it with
+`VM.GuestAgent.Audit`, **not** `VM.GuestAgent.Unrestricted`. Network discovery
+does not need guest command execution, file access or filesystem management.
+HMP monitor access now uses `Sys.Audit`, but that is not a substitute for
+guest-agent permissions.
+
+Before upgrading, inspect custom roles with `pveum role list` and record their
+privileges and ACL assignments (`pveum acl list`). The `pve8to9` failure about
+custom roles using `VM.Monitor` requires a planned role migration; PVE 8
+cannot accept the new PVE 9 privilege yet. Follow the
+[official upgrade procedure](https://pve.proxmox.com/wiki/Upgrade_from_8_to_9)
+and adapt the roles after upgrading, before using their API tokens again.
+Do not remove `VM.Monitor` on PVE 8 if guest-agent access is still needed.
+
+After upgrading, rerun the setup script with the same resource settings.
+For an otherwise matching `TalosInstaller` role, it asks for confirmation
+before replacing `VM.Monitor` with `VM.GuestAgent.Audit` (also when the upgrade
+has already removed `VM.Monitor`). This changes permissions for **every
+existing user and token assigned that role**. Other privilege mismatches stop
+the script without modifying the shared role. This is not a general migration
+tool: inspect and migrate the other custom roles reported by `pve8to9`
+according to the operations they actually perform.
+
+Existing tokens using the migrated role inherit its corrected permissions;
+they do not need regeneration just for this privilege change. Rerunning the
+script additionally creates a new token. After switching inventory to it and
+verifying provisioning, revoke obsolete tokens manually.
+
+Permission references:
+[guest-agent API checks](https://github.com/proxmox/qemu-server/blob/master/src/PVE/API2/Qemu/Agent.pm)
+and [storage download API checks](https://github.com/proxmox/pve-storage/blob/master/src/PVE/API2/Storage/Status.pm).
+
+Run the setup script's offline regression tests with
+`bash tests/setup_proxmox_api_test.sh`. They mock Proxmox commands and do not
+change a real cluster; live PVE 8/9 provisioning still needs integration testing.
+
 ## Talos Versions
 
 The role supports Talos `v1.14.0` and later. Select the target release with
@@ -420,7 +516,7 @@ settings only; the role does not install Longhorn.
 | `talos_proxmox_proxmox_storage` | `truenas-01-isos` | Proxmox storage name for ISOs/templates |
 | `talos_proxmox_proxmox_vm_storage` | `nvme` | Proxmox storage target for VM disks |
 | `talos_proxmox_vmid_starting_number` | `null` | Optional first VMID; assigns consecutive IDs to masters, then workers |
-| `talos_proxmox_proxmox_storage_url` | `{{ talos_proxmox_proxmox_api_url }}/nodes/{{ talos_proxmox_proxmox_node }}/storage/{{ talos_proxmox_proxmox_storage }}` | Proxmox storage API URL (derived) |
+| `talos_proxmox_proxmox_storage_url` | `{{ talos_proxmox_proxmox_api_url }}/nodes/{{ talos_proxmox_proxmox_node }}/storage/{{ talos_proxmox_proxmox_proxmox_storage }}` | Proxmox storage API URL (derived) |
 | `talos_proxmox_talos_version` | `v1.14.5` | Talos release version to download/install (minimum supported: `v1.14.0`) |
 | `talos_proxmox_talos_api_cert_sans` | `[]` | Optional extra Talos API certificate DNS names or IP addresses on control-plane nodes; see the [HAProxy guide](docs/haproxy-talos-api.md) |
 | `talos_proxmox_talos_extensions` | `[]` | Additional official system extensions; QEMU guest agent is always included. See [extension configuration](#official-system-extensions) |
