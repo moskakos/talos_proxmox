@@ -516,7 +516,7 @@ settings only; the role does not install Longhorn.
 | `talos_proxmox_proxmox_storage` | `truenas-01-isos` | Proxmox storage name for ISOs/templates |
 | `talos_proxmox_proxmox_vm_storage` | `nvme` | Proxmox storage target for VM disks |
 | `talos_proxmox_vmid_starting_number` | `null` | Optional first VMID; assigns consecutive IDs to masters, then workers |
-| `talos_proxmox_proxmox_storage_url` | `{{ talos_proxmox_proxmox_api_url }}/nodes/{{ talos_proxmox_proxmox_node }}/storage/{{ talos_proxmox_proxmox_proxmox_storage }}` | Proxmox storage API URL (derived) |
+| `talos_proxmox_proxmox_storage_url` | `{{ talos_proxmox_proxmox_api_url }}/nodes/{{ talos_proxmox_proxmox_node }}/storage/{{ talos_proxmox_proxmox_storage }}` | Proxmox storage API URL (derived) |
 | `talos_proxmox_talos_version` | `v1.14.5` | Talos release version to download/install (minimum supported: `v1.14.0`) |
 | `talos_proxmox_talos_api_cert_sans` | `[]` | Optional extra Talos API certificate DNS names or IP addresses on control-plane nodes; see the [HAProxy guide](docs/haproxy-talos-api.md) |
 | `talos_proxmox_talos_extensions` | `[]` | Additional official system extensions; QEMU guest agent is always included. See [extension configuration](#official-system-extensions) |
