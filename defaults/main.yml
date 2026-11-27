@@ -14,9 +14,11 @@ talos_proxmox_proxmox_api_token_id: "token"
 talos_proxmox_proxmox_api_token_secret: "secret"
 
 talos_proxmox_proxmox_node: "pve-01"
-talos_proxmox_proxmox_storage: "truenas-01-isos"
+talos_proxmox_proxmox_iso_storage: "truenas-01-isos"
 talos_proxmox_proxmox_vm_storage: "nvme"
-talos_proxmox_proxmox_storage_url: "{{ talos_proxmox_proxmox_api_url }}/nodes/{{ talos_proxmox_proxmox_node }}/storage/{{ talos_proxmox_proxmox_storage }}"
+talos_proxmox_proxmox_storage_url: >-
+  {{ talos_proxmox_proxmox_api_url }}/nodes/{{ talos_proxmox_proxmox_node
+  }}/storage/{{ talos_proxmox_proxmox_iso_storage }}
 
 # Optional first VMID; assigns consecutive IDs to masters, then workers.
 # null lets Proxmox choose the next available ID for each VM.

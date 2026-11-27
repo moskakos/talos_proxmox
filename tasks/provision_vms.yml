@@ -30,7 +30,7 @@
   ansible.builtin.set_fact:
     talos_proxmox_existing_isos: >-
       {{ talos_proxmox_existing_iso_content.json.data
-         | selectattr('volid', 'equalto', talos_proxmox_proxmox_storage ~ ':iso/' ~ talos_proxmox_talos_iso_filename) | list }}
+         | selectattr('volid', 'equalto', talos_proxmox_proxmox_iso_storage ~ ':iso/' ~ talos_proxmox_talos_iso_filename) | list }}
 
 - name: Require an unambiguous non-empty existing Talos ISO
   ansible.builtin.assert:
@@ -122,7 +122,7 @@
   vars:
     talos_proxmox_matching_isos: >-
       {{ talos_proxmox_iso_content.json.data
-         | selectattr('volid', 'equalto', talos_proxmox_proxmox_storage ~ ':iso/' ~ talos_proxmox_talos_iso_filename) | list }}
+         | selectattr('volid', 'equalto', talos_proxmox_proxmox_iso_storage ~ ':iso/' ~ talos_proxmox_talos_iso_filename) | list }}
 
 - name: Create talos VMs
   community.proxmox.proxmox_kvm:
@@ -152,7 +152,7 @@
          | combine(({ 'scsi1': talos_proxmox_proxmox_vm_storage ~ ':' ~ item.storage_disk ~ ',format=raw' })
                    if (item.storage_disk | default(0, true) | int) > 0 else {}) }}
     ide:
-      ide2: "{{ talos_proxmox_proxmox_storage }}:iso/{{ talos_proxmox_talos_iso_filename }},media=cdrom"
+      ide2: "{{ talos_proxmox_proxmox_iso_storage }}:iso/{{ talos_proxmox_talos_iso_filename }},media=cdrom"
   loop: "{{ talos_proxmox_masters + talos_proxmox_workers }}"
   loop_control:
     index_var: talos_proxmox_vm_index
