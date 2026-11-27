@@ -245,6 +245,11 @@ The following sequence describes what the role does in order (if called without 
 - Bootstrap the talos cluster, wait for the cluster to be ready and get the kube config
 - Create all k8s resources defined in "talos_proxmox_static_resources"
 
+The bootstrap step retries the Talos `bootstrap is not available yet`
+precondition up to 60 times, five seconds apart, while the node starts. Other
+bootstrap errors fail immediately. This does not make bootstrap safe to repeat
+on an already bootstrapped cluster.
+
 Before these steps, the role checks that `talos_proxmox_cluster_name` resolves
 on the execution host using its normal system resolver (including hosts-file
 entries). This also runs for the `configure_talos`, `create_vms`, `install_talos`,
