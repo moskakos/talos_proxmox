@@ -60,24 +60,28 @@ prefers `Sys.AccessNetwork` over the legacy root-level grant. On PVE 8,
 the legacy grant requires explicit confirmation; on PVE 9, a missing
 `Sys.AccessNetwork` stops the script instead of granting `Sys.Modify`.
 
-Set the node, storage and bridge names to match your inventory. For example:
+Pass the token lifetime and any environment-specific names as options. For
+example:
 
 ```bash
-PROXMOX_API_USER='talos@pve' \
-PROXMOX_API_TOKEN_ID='provisioning' \
-PROXMOX_API_TOKEN_EXPIRE_DAYS=30 \
-PROXMOX_NODE='pve-01' \
-PROXMOX_STORAGE='truenas-01-isos' \
-PROXMOX_VM_STORAGE='nvme' \
-K8S_VMBR='vmbr0' \
-bash ./setup_proxmox_api.sh
+bash ./setup_proxmox_api.sh \
+  --user talos@pve \
+  --token-name provisioning \
+  --expires-days 30 \
+  --node pve-01 \
+  --iso-storage truenas-01-isos \
+  --vm-storage nvme \
+  --bridge vmbr0
 ```
 
-The lifetime must be a whole number from 1 to 36500 days. Every run creates a
-**new token with a random suffix**, not a replacement for an existing token.
-Store the secret securely when printed; it is shown only once. Copy the
-printed username, suffixed token ID (without `user@pve!`) and secret into
-`talos_proxmox_proxmox_api_user`, `talos_proxmox_proxmox_api_token_id` and
+The token lifetime is required and must be a whole number from 1 to 36500
+days. Other options have defaults; run `bash ./setup_proxmox_api.sh --help` to
+see them. Environment variables used by earlier versions are no longer read.
+Every run creates a **new token with a random suffix**, not a replacement for
+an existing token. Store the secret securely when printed; it is shown only
+once. Copy the printed username, suffixed token ID (without `user@pve!`) and
+secret into `talos_proxmox_proxmox_api_user`,
+`talos_proxmox_proxmox_api_token_id` and
 `talos_proxmox_proxmox_api_token_secret`, respectively.
 
 The script uses a combined `TalosInstaller` role on the selected ACL paths.

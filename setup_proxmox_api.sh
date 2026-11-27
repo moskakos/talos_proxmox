@@ -2,37 +2,104 @@
 set -euo pipefail
 umask 077
 
-# Proxmox connection variables match the Ansible inventory; token lifetime is configured in days (1-36500).
-# Run this script on a Proxmox VE 8 or 9 node as root.
-# Modify the variables below as needed for your environment or run:
-# PROXMOX_API_USER="user@pve" PROXMOX_API_TOKEN_ID="token" PROXMOX_API_TOKEN_EXPIRE_DAYS=10 PROXMOX_STORAGE="local" PROXMOX_VM_STORAGE="local-lvm" PROXMOX_NODE="proxmox" K8S_VMBR="vmbr0" ./setup_proxmox_api.sh
-PROXMOX_API_USER="${PROXMOX_API_USER:-ansible@pve}"
-PROXMOX_API_TOKEN_ID="${PROXMOX_API_TOKEN_ID:-provisioning}"
-PROXMOX_API_TOKEN_EXPIRE_DAYS="${PROXMOX_API_TOKEN_EXPIRE_DAYS:-}"
-PROXMOX_STORAGE="${PROXMOX_STORAGE:-local}"
-PROXMOX_VM_STORAGE="${PROXMOX_VM_STORAGE:-local-lvm}"
-PROXMOX_NODE="${PROXMOX_NODE:-proxmox}"
-K8S_VMBR="${K8S_VMBR:-vmbr0}"
-
 fail() {
     printf 'ERROR: %s\n' "$*" >&2
     exit 1
 }
 
+usage() {
+    cat <<'EOF'
+Usage: setup_proxmox_api.sh --expires-days DAYS [options]
+
+Create a restricted Proxmox API user and a new Talos provisioning token.
+Run on a Proxmox VE 8 or 9 node as root.
+
+Options:
+  -u, --user USER             Proxmox user (default: ansible@pve)
+  -t, --token-name NAME       Token name without user@realm! (default: provisioning)
+  -e, --expires-days DAYS     Token lifetime, from 1 to 36500 days (required)
+  -i, --iso-storage NAME      Storage for Talos ISO files (default: local)
+  -d, --vm-storage NAME       Storage for VM disks (default: local-lvm)
+  -n, --node NAME             Proxmox node name (default: proxmox)
+  -b, --bridge NAME           Local bridge for Kubernetes VMs (default: vmbr0)
+  -h, --help                  Show this help
+EOF
+}
+
+require_value() {
+    [[ $# -ge 2 && $2 != -* ]] || fail "Option $1 requires a value."
+}
+
+PROXMOX_API_USER="ansible@pve"
+PROXMOX_API_TOKEN_ID="provisioning"
+PROXMOX_API_TOKEN_EXPIRE_DAYS=""
+PROXMOX_STORAGE="local"
+PROXMOX_VM_STORAGE="local-lvm"
+PROXMOX_NODE="proxmox"
+K8S_VMBR="vmbr0"
+
+while (($#)); do
+    case "$1" in
+        -u|--user)
+            require_value "$@"
+            PROXMOX_API_USER=$2
+            shift 2
+            ;;
+        -t|--token-name)
+            require_value "$@"
+            PROXMOX_API_TOKEN_ID=$2
+            shift 2
+            ;;
+        -e|--expires-days)
+            require_value "$@"
+            PROXMOX_API_TOKEN_EXPIRE_DAYS=$2
+            shift 2
+            ;;
+        -i|--iso-storage)
+            require_value "$@"
+            PROXMOX_STORAGE=$2
+            shift 2
+            ;;
+        -d|--vm-storage)
+            require_value "$@"
+            PROXMOX_VM_STORAGE=$2
+            shift 2
+            ;;
+        -n|--node)
+            require_value "$@"
+            PROXMOX_NODE=$2
+            shift 2
+            ;;
+        -b|--bridge)
+            require_value "$@"
+            K8S_VMBR=$2
+            shift 2
+            ;;
+        -h|--help)
+            usage
+            exit 0
+            ;;
+        *)
+            fail "Unknown option: $1. Use --help to see available options."
+            ;;
+    esac
+done
+
 [[ $(id -u) -eq 0 ]] || fail "Run this script as root on a Proxmox node."
 for dependency in pveum pvesh python3; do
     command -v "$dependency" >/dev/null || fail "Required command not found: $dependency"
 done
+[[ -n $PROXMOX_API_TOKEN_EXPIRE_DAYS ]] || fail "Option --expires-days is required."
 python3 -c '
 import re, sys
 value = sys.argv[1]
 sys.exit(0 if re.fullmatch(r"[0-9]{1,5}", value) and 1 <= int(value) <= 36500 else 1)
 ' "$PROXMOX_API_TOKEN_EXPIRE_DAYS" ||
-    fail "Set PROXMOX_API_TOKEN_EXPIRE_DAYS to a whole number from 1 to 36500."
+    fail "Option --expires-days must be a whole number from 1 to 36500."
 [[ $PROXMOX_API_USER =~ ^[^[:space:]@\!/:]+@pve$ ]] ||
-    fail "Set PROXMOX_API_USER to a complete username in the local pve realm (user@pve)."
+    fail "Option --user must be a complete username in the local pve realm (user@pve)."
 [[ $PROXMOX_API_TOKEN_ID =~ ^[A-Za-z][A-Za-z0-9._-]*$ ]] ||
-    fail "Set PROXMOX_API_TOKEN_ID to the token name only, without user@realm!."
+    fail "Option --token-name must be a token name only, without user@realm!."
 for resource in "$PROXMOX_STORAGE" "$PROXMOX_VM_STORAGE" "$PROXMOX_NODE" "$K8S_VMBR"; do
     [[ $resource =~ ^[A-Za-z0-9][A-Za-z0-9._-]*$ ]] || fail "Invalid resource name: $resource"
 done

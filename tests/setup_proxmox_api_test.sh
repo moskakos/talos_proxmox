@@ -38,13 +38,15 @@ MOCK
 
 chmod +x "$test_dir/bin/id" "$test_dir/bin/pvesh" "$test_dir/bin/pveum"
 export PATH="$test_dir/bin:$PATH"
-export PROXMOX_API_USER='talos@pve'
-export PROXMOX_API_TOKEN_ID='provisioning'
-export PROXMOX_API_TOKEN_EXPIRE_DAYS=30
-export PROXMOX_NODE='pve-01'
-export PROXMOX_STORAGE='isos'
-export PROXMOX_VM_STORAGE='disks'
-export K8S_VMBR='vmbr0'
+base_args=(
+    --user talos@pve
+    --token-name provisioning
+    --expires-days 30
+    --node pve-01
+    --iso-storage isos
+    --vm-storage disks
+    --bridge vmbr0
+)
 export TEST_CALLS="$test_dir/calls"
 export TEST_VERSION TEST_ROLES
 
@@ -58,9 +60,15 @@ fail() {
 }
 
 run_case() {
-    local name=$1 expected=$2 input=${3:-} status=0
+    local name=$1 expected=$2 input="" status=0
+    shift 2
+    if [[ $# -gt 0 && $1 != -* ]]; then
+        input=$1
+        shift
+    fi
     : > "$TEST_CALLS"
-    bash "$project_dir/setup_proxmox_api.sh" > "$test_dir/output" 2>&1 <<< "$input" || status=$?
+    bash "$project_dir/setup_proxmox_api.sh" "${base_args[@]}" "$@" \
+        > "$test_dir/output" 2>&1 <<< "$input" || status=$?
     if [[ $expected == success ]]; then
         [[ $status == 0 ]] || fail "$name: expected success, got $status"
     else
@@ -142,11 +150,17 @@ TEST_ROLES="[{\"roleid\":\"PVEAdmin\",\"privs\":\"Sys.AccessNetwork\"},{\"roleid
 run_case 'Unrelated shared-role difference rejected' failure yes
 
 TEST_ROLES=$modern_roles
-PROXMOX_VM_STORAGE=isos
-run_case 'Same ISO and VM storage' success
+run_case 'Same ISO and VM storage' success --vm-storage isos
 [[ $(grep -c '^acl modify /storage/isos ' "$TEST_CALLS") == 2 ]] ||
     fail 'Same storage should have exactly one user and one token grant'
 
-PROXMOX_API_TOKEN_EXPIRE_DAYS=0
-run_case 'Invalid token lifetime' failure
+run_case 'Help' success --help
+grep -Fq -- '--expires-days DAYS' "$test_dir/output" || fail 'Help does not show token lifetime option'
+run_case 'Short option aliases' success \
+    -u talos@pve -t provisioning -e 30 -n pve-01 -i isos -d disks -b vmbr0
+run_case 'Unknown option' failure --unknown
+run_case 'Option missing value' failure --bridge
+run_case 'Option followed by another option' failure --bridge --node pve-02
+run_case 'Missing token lifetime' failure --expires-days ''
+run_case 'Invalid token lifetime' failure --expires-days 0
 printf 'All setup script tests passed.\n'
